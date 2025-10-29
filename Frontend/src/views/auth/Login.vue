@@ -158,9 +158,9 @@
           <div class="text-center">
             <p class="text-sm text-gray-600">
               Chưa có tài khoản?
-              <a href="#" class="text-primary-600 hover:text-primary-700 font-semibold">
+              <RouterLink to="/register" class="text-primary-600 hover:text-primary-700 font-semibold">
                 Đăng ký ngay
-              </a>
+              </RouterLink>
             </p>
           </div>
         </form>
