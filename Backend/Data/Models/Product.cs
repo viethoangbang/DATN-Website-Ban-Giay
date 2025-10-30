@@ -20,8 +20,7 @@ namespace Backend.Data.Models
         public string? Description { get; set; }
 
         [Required]
-        [Column("price")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("price", TypeName = "decimal(18,2)")]
         public decimal Price { get; set; }
 
         [Required]

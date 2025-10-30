@@ -19,8 +19,7 @@ namespace Backend.Data.Models
         public int Quantity { get; set; } = 1;
 
         [Required]
-        [Column("unit_price")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("unit_price", TypeName = "decimal(18,2)")]
         public decimal UnitPrice { get; set; }
 
         [Required]

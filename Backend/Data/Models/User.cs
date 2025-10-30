@@ -10,15 +10,15 @@ namespace Backend.Data.Models
         [Column("id")]
         public string Id { get; set; } = Guid.NewGuid().ToString();
 
-        [Required]
-        [Column("full_name")]
-        [MaxLength(255)]
-        public string FullName { get; set; } = string.Empty;
+    [Required]
+    [Column("full_name")]
+    [MaxLength(255)]
+    public string FullName { get; set; } = string.Empty;
 
-        [Required]
-        [Column("email")]
-        [MaxLength(255)]
-        public string Email { get; set; } = string.Empty;
+    [Required]
+    [Column("email")]
+    [MaxLength(255)]
+    public string Email { get; set; } = string.Empty;
 
         [Required]
         [Column("password_hash")]
@@ -33,10 +33,10 @@ namespace Backend.Data.Models
         [MaxLength(500)]
         public string? Address { get; set; }
 
-        [Required]
-        [Column("role")]
-        [MaxLength(50)]
-        public string Role { get; set; } = "user"; // user, admin
+    [Required]
+    [Column("role")]
+    [MaxLength(50)]
+    public string Role { get; set; } = "customer"; // customer, admin, employee
 
         [Column("created_at")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

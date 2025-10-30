@@ -17,8 +17,7 @@ namespace Backend.Data.Models
         public DateTime OrderDate { get; set; } = DateTime.UtcNow;
 
         [Required]
-        [Column("total_amount")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("total_amount", TypeName = "decimal(18,2)")]
         public decimal TotalAmount { get; set; }
 
         [Required]

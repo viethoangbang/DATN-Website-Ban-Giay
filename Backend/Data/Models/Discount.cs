@@ -25,8 +25,7 @@ namespace Backend.Data.Models
         public string DiscountType { get; set; } = "percentage"; // percentage, fixed_amount
 
         [Required]
-        [Column("value")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("value", TypeName = "decimal(18,2)")]
         public decimal Value { get; set; }
 
         [Column("start_date")]

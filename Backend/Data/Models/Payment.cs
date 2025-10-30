@@ -14,8 +14,7 @@ namespace Backend.Data.Models
         public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
 
         [Required]
-        [Column("amount")]
-        [Column(TypeName = "decimal(18,2)")]
+        [Column("amount", TypeName = "decimal(18,2)")]
         public decimal Amount { get; set; }
 
         [Required]
