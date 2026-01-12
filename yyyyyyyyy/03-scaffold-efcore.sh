@@ -4,7 +4,7 @@ echo "==================================="
 echo "Scaffolding EF Core Models"
 echo "==================================="
 
-DB_NAME="SneakerShop"
+DB_NAME="ShopBGiay"
 SA_PASSWORD="@AAAaaa123123"
 CONNECTION_STRING="Server=localhost,1433;Database=$DB_NAME;User Id=SA;Password=$SA_PASSWORD;TrustServerCertificate=True;MultipleActiveResultSets=true"
 

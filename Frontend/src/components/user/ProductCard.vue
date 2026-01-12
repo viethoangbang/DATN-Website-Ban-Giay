@@ -132,7 +132,44 @@ const cartStore = useCartStore()
 
 const isWishlisted = ref(false)
 const selectedColor = ref(props.product.colors?.[0] || null)
-const currentImage = ref(props.product.image)
+
+// Helper function to extract image URL from product
+function getImageUrl(product) {
+  if (!product) return ''
+  
+  // If image is a string URL, use it directly
+  if (typeof product.image === 'string' && product.image) {
+    return product.image
+  }
+  
+  // If image is an object with url property
+  if (product.image && typeof product.image === 'object' && product.image.url) {
+    return product.image.url
+  }
+  
+  // If images array exists, use first image
+  if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+    const firstImage = product.images[0]
+    return typeof firstImage === 'string' ? firstImage : (firstImage?.url || '')
+  }
+  
+  // If variant has imageUrl
+  if (product.variants && product.variants.length > 0) {
+    const firstVariant = product.variants[0]
+    if (firstVariant.images && Array.isArray(firstVariant.images) && firstVariant.images.length > 0) {
+      const firstImg = firstVariant.images[0]
+      return typeof firstImg === 'string' ? firstImg : (firstImg?.url || '')
+    }
+    if (firstVariant.imageUrl) {
+      return firstVariant.imageUrl
+    }
+  }
+  
+  // Fallback to empty string (will trigger error handler)
+  return ''
+}
+
+const currentImage = ref(getImageUrl(props.product))
 const adding = ref(false)
 
 // Get unique colors from variants
@@ -202,7 +239,8 @@ function getColorCode(colorName) {
 }
 
 function handleImageError() {
-  currentImage.value = 'https://via.placeholder.com/400x400?text=No+Image'
+  // Use SVG data URI as fallback instead of external URL
+  currentImage.value = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTgiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='
 }
 
 async function addToCart() {

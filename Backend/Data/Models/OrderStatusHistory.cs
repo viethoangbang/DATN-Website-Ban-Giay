@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Data.Models;
 
 [Table("OrderStatusHistory")]
+[Index("OrderId", Name = "IDX_OrderStatusHistory_OrderID")]
 public partial class OrderStatusHistory
 {
     [Key]
@@ -17,14 +18,12 @@ public partial class OrderStatusHistory
     public int OrderId { get; set; }
 
     [StringLength(50)]
-    [Unicode(false)]
     public string? FromStatus { get; set; }
 
     [StringLength(50)]
-    [Unicode(false)]
-    public string ToStatus { get; set; } = null!;
+    public string? ToStatus { get; set; }
 
-    [StringLength(500)]
+    [Column(TypeName = "text")]
     public string? Note { get; set; }
 
     [StringLength(100)]
@@ -32,7 +31,7 @@ public partial class OrderStatusHistory
     public string? CreatedBy { get; set; }
 
     [Column(TypeName = "datetime")]
-    public DateTime CreateDate { get; set; }
+    public DateTime? CreateDate { get; set; }
 
     [ForeignKey("OrderId")]
     [InverseProperty("OrderStatusHistories")]

@@ -13,7 +13,9 @@ public class ProductResponseDto
     public string? UpdateBy { get; set; }
     public int? CategoryId { get; set; }
     public string? Code { get; set; }
-    public string? Brand { get; set; }
+    public string? Brand { get; set; } // Keep for backward compatibility
+    public int? BrandId { get; set; }
+    public string? BrandName { get; set; }
     public int Weight { get; set; } = 1000; // Trọng lượng sản phẩm (gram)
 }
 
@@ -26,7 +28,8 @@ public class ProductCreateDto
     public string? CreateBy { get; set; }
     public int? CategoryId { get; set; }
     public string? Code { get; set; }
-    public string? Brand { get; set; }
+    public string? Brand { get; set; } // Keep for backward compatibility
+    public int? BrandId { get; set; }
     public int Weight { get; set; } = 1000; // Trọng lượng sản phẩm (gram)
 }
 
@@ -39,6 +42,7 @@ public class ProductUpdateDto
     public string? UpdateBy { get; set; }
     public int? CategoryId { get; set; }
     public string? Code { get; set; }
-    public string? Brand { get; set; }
+    public string? Brand { get; set; } // Keep for backward compatibility
+    public int? BrandId { get; set; }
     public int? Weight { get; set; } // Trọng lượng sản phẩm (gram)
 }

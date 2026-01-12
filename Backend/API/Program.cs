@@ -1,11 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using Data;
+using Data.Interfaces;
+using Data.Repositories;
 using Data.Models;
 using Microsoft.OpenApi.Models;
-using Business.Interfaces;
-using Business.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Business.Interfaces;
+using Business.Services;
+using API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +17,53 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<SneakerShopContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// Add HttpClient for external API calls
+builder.Services.AddHttpClient();
+
+// Register Repositories
+builder.Services.AddScoped<IAccountRepo, AccountRepo>();
+builder.Services.AddScoped<IBrandRepo, BrandRepo>();
+builder.Services.AddScoped<ICategoryRepo, CategoryRepo>();
+builder.Services.AddScoped<IProductRepo, ProductRepo>();
+builder.Services.AddScoped<IProductDetailRepo, ProductDetailRepo>();
+builder.Services.AddScoped<ICartRepo, CartRepo>();
+builder.Services.AddScoped<ICartDetailRepo, CartDetailRepo>();
+builder.Services.AddScoped<IOrderRepo, OrderRepo>();
+builder.Services.AddScoped<IOrderDetailRepo, OrderDetailRepo>();
+builder.Services.AddScoped<IAddressRepo, AddressRepo>();
+builder.Services.AddScoped<IDiscountRepo, DiscountRepo>();
+builder.Services.AddScoped<IVoucherRepo, VoucherRepo>();
+builder.Services.AddScoped<IBrandBannerRepo, BrandBannerRepo>();
+builder.Services.AddScoped<IImageRepo, ImageRepo>();
+builder.Services.AddScoped<IColorRepo, ColorRepo>();
+builder.Services.AddScoped<ISizeRepo, SizeRepo>();
+builder.Services.AddScoped<IProductDetailImageRepo, ProductDetailImageRepo>();
+builder.Services.AddScoped<IPaymentRepo, PaymentRepo>();
+builder.Services.AddScoped<IShipmentRepo, ShipmentRepo>();
+
 // Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+builder.Services.AddScoped<IBrandService, BrandService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IProductDetailService, ProductDetailService>();
+builder.Services.AddScoped<IDiscountService, DiscountService>();
+builder.Services.AddScoped<IBrandBannerService, BrandBannerService>();
+builder.Services.AddScoped<IColorService, ColorService>();
+builder.Services.AddScoped<ISizeService, SizeService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IImageService, ImageService>();
+builder.Services.AddScoped<IAddressService, AddressService>();
+builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ICheckoutService, CheckoutService>();
+builder.Services.AddScoped<IVoucherService, VoucherService>();
+builder.Services.AddScoped<IVNPayService, VNPayService>();
+builder.Services.AddScoped<IGHNService, GHNService>();
+builder.Services.AddScoped<IGHNLocationService, GHNLocationService>();
+builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<ICloudinaryService, CloudinaryService>();
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -94,6 +143,9 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 var app = builder.Build();
+
+// Add global exception handler
+app.UseGlobalExceptionHandler();
 
 app.UseCors("AllowFrontend");
 

@@ -1,362 +1,229 @@
--- ===================================
--- CLEAN DATABASE SCHEMA - SNEAKER SHOP
--- ===================================
+-- DROP SCHEMA dbo;
 
--- 1. ACCOUNT & ROLE MANAGEMENT
-CREATE TABLE dbo.Account (
-    ID INT IDENTITY(1,1) NOT NULL,
-    Email VARCHAR(255) NOT NULL,
-    [Password] VARCHAR(255) NOT NULL,
-    PhoneNumber VARCHAR(30) NULL,
-    FullName NVARCHAR(255) NOT NULL,
-    AvatarUrl VARCHAR(1000) NULL,
-    Status VARCHAR(50) NOT NULL DEFAULT 'Active',
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
-    UpdateDate DATETIME NULL,
+CREATE SCHEMA dbo;
+-- ShopBGiay.dbo.Account definition
 
-    CONSTRAINT PK_Account PRIMARY KEY (ID),
-    CONSTRAINT UQ_Account_Email UNIQUE (Email)
-);
+-- Drop table
 
-CREATE TABLE dbo.[Role] (
-    ID INT IDENTITY(1,1) NOT NULL,
-    Name VARCHAR(50) NOT NULL,
-    Description NVARCHAR(255) NULL,
+-- DROP TABLE ShopBGiay.dbo.Account;
 
-    CONSTRAINT PK_Role PRIMARY KEY (ID),
-    CONSTRAINT UQ_Role_Name UNIQUE (Name)
-);
+CREATE TABLE ShopBGiay.dbo.Account ( ID int IDENTITY(1,1) NOT NULL, Email varchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Password varchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PhoneNumber varchar(30) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, FullName nvarchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Sex varchar(10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, BirthYear int NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime NULL, UpdateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, UpdateDate datetime NULL, Avatar_Url varchar(1000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CONSTRAINT PK__Account__3214EC27240D830D PRIMARY KEY (ID), CONSTRAINT UQ__Account__A9D1053449DC465B UNIQUE (Email));
 
-CREATE TABLE dbo.AccountRole (
-    ID INT IDENTITY(1,1) NOT NULL,
-    AccountID INT NOT NULL,
-    RoleID INT NOT NULL,
 
-    CONSTRAINT PK_AccountRole PRIMARY KEY (ID),
-    CONSTRAINT UQ_AccountRole UNIQUE (AccountID, RoleID),
-    CONSTRAINT FK_AccountRole_Account 
-        FOREIGN KEY (AccountID) REFERENCES dbo.Account(ID) ON DELETE CASCADE,
-    CONSTRAINT FK_AccountRole_Role
-        FOREIGN KEY (RoleID) REFERENCES dbo.[Role](ID) ON DELETE CASCADE
-);
+-- ShopBGiay.dbo.Category definition
 
--- 2. BRAND (NEW TABLE)
-CREATE TABLE dbo.Brand (
-    ID INT IDENTITY(1,1) NOT NULL,
-    Name NVARCHAR(100) NOT NULL,
-    Description NVARCHAR(500) NULL,
-    LogoUrl VARCHAR(1000) NULL,
+-- Drop table
 
-    CONSTRAINT PK_Brand PRIMARY KEY (ID),
-    CONSTRAINT UQ_Brand_Name UNIQUE (Name)
-);
+-- DROP TABLE ShopBGiay.dbo.Category;
 
--- 3. CATEGORY
-CREATE TABLE dbo.Category (
-    ID INT IDENTITY(1,1) NOT NULL,
-    Name NVARCHAR(255) NOT NULL,
-    Description NVARCHAR(500) NULL,
+CREATE TABLE ShopBGiay.dbo.Category ( ID int IDENTITY(1,1) NOT NULL, Name nvarchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Description nvarchar(1000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, [Condition] varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime NULL, UpdateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, UpdateDate datetime NULL, CONSTRAINT PK__Category__3214EC27EA89B713 PRIMARY KEY (ID));
 
-    CONSTRAINT PK_Category PRIMARY KEY (ID),
-    CONSTRAINT UQ_Category_Name UNIQUE (Name)
-);
 
--- 4. IMAGE
-CREATE TABLE dbo.[Image] (
-    ID INT IDENTITY(1,1) NOT NULL,
-    Url VARCHAR(1000) NOT NULL,
+-- ShopBGiay.dbo.Color definition
 
-    CONSTRAINT PK_Image PRIMARY KEY (ID)
-);
+-- Drop table
 
--- 5. PRODUCT MANAGEMENT
-CREATE TABLE dbo.Product (
-    ID INT IDENTITY(1,1) NOT NULL,
-    Code VARCHAR(100) NOT NULL,
-    Name NVARCHAR(255) NOT NULL,
-    Description NVARCHAR(1000) NULL,
-    BrandID INT NOT NULL,
-    CategoryID INT NOT NULL,
-    Status VARCHAR(50) NOT NULL DEFAULT 'Active',
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
-    UpdateDate DATETIME NULL,
+-- DROP TABLE ShopBGiay.dbo.Color;
 
-    CONSTRAINT PK_Product PRIMARY KEY (ID),
-    CONSTRAINT UQ_Product_Code UNIQUE (Code),
-    CONSTRAINT FK_Product_Brand 
-        FOREIGN KEY (BrandID) REFERENCES dbo.Brand(ID),
-    CONSTRAINT FK_Product_Category 
-        FOREIGN KEY (CategoryID) REFERENCES dbo.Category(ID)
-);
+CREATE TABLE ShopBGiay.dbo.Color ( ID int IDENTITY(1,1) NOT NULL, Name varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime NULL, UpdateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, UpdateDate datetime NULL, CONSTRAINT PK__Color__3214EC274E709633 PRIMARY KEY (ID));
 
-CREATE TABLE dbo.ProductVariant (
-    ID INT IDENTITY(1,1) NOT NULL,
-    ProductID INT NOT NULL,
-    Color NVARCHAR(50) NOT NULL,
-    Size VARCHAR(10) NOT NULL,
-    Price DECIMAL(18,2) NOT NULL,
-    Quantity INT NOT NULL DEFAULT 0,
-    Status VARCHAR(50) NOT NULL DEFAULT 'Active',
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
-    UpdateDate DATETIME NULL,
 
-    CONSTRAINT PK_ProductVariant PRIMARY KEY (ID),
-    CONSTRAINT UQ_ProductVariant UNIQUE (ProductID, Color, Size),
-    CONSTRAINT FK_ProductVariant_Product 
-        FOREIGN KEY (ProductID) REFERENCES dbo.Product(ID) ON DELETE CASCADE,
-    CONSTRAINT CK_ProductVariant_Price CHECK (Price >= 0),
-    CONSTRAINT CK_ProductVariant_Quantity CHECK (Quantity >= 0)
-);
+-- ShopBGiay.dbo.[Image] definition
 
-CREATE TABLE dbo.ProductVariantImage (
-    ID INT IDENTITY(1,1) NOT NULL,
-    ProductVariantID INT NOT NULL,
-    ImageID INT NOT NULL,
-    DisplayOrder INT NOT NULL DEFAULT 0,
-    IsMain BIT NOT NULL DEFAULT 0,
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
+-- Drop table
 
-    CONSTRAINT PK_ProductVariantImage PRIMARY KEY (ID),
-    CONSTRAINT UQ_ProductVariantImage UNIQUE (ProductVariantID, ImageID),
-    CONSTRAINT FK_ProductVariantImage_ProductVariant 
-        FOREIGN KEY (ProductVariantID) REFERENCES dbo.ProductVariant(ID) ON DELETE CASCADE,
-    CONSTRAINT FK_ProductVariantImage_Image 
-        FOREIGN KEY (ImageID) REFERENCES dbo.[Image](ID) ON DELETE CASCADE
-);
+-- DROP TABLE ShopBGiay.dbo.[Image];
 
--- 6. ADDRESS
-CREATE TABLE dbo.Address (
-    ID INT IDENTITY(1,1) NOT NULL,
-    AccountID INT NOT NULL,
-    ReceiverName NVARCHAR(100) NOT NULL,
-    ReceiverPhone VARCHAR(30) NOT NULL,
-    Province NVARCHAR(100) NOT NULL,
-    District NVARCHAR(100) NOT NULL,
-    Ward NVARCHAR(100) NOT NULL,
-    StreetAddress NVARCHAR(255) NOT NULL,
-    IsDefault BIT NOT NULL DEFAULT 0,
+CREATE TABLE ShopBGiay.dbo.[Image] ( ID int IDENTITY(1,1) NOT NULL, Url varchar(1000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, [Type] varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CONSTRAINT PK__Image__3214EC27555A91A8 PRIMARY KEY (ID));
 
-    CONSTRAINT PK_Address PRIMARY KEY (ID),
-    CONSTRAINT FK_Address_Account 
-        FOREIGN KEY (AccountID) REFERENCES dbo.Account(ID) ON DELETE CASCADE
-);
 
--- 7. CART (SHOPPING CART)
-CREATE TABLE dbo.Cart (
-    ID INT IDENTITY(1,1) NOT NULL,
-    AccountID INT NOT NULL,
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
+-- ShopBGiay.dbo.[Role] definition
 
-    CONSTRAINT PK_Cart PRIMARY KEY (ID),
-    CONSTRAINT FK_Cart_Account 
-        FOREIGN KEY (AccountID) REFERENCES dbo.Account(ID) ON DELETE CASCADE
-);
+-- Drop table
 
-CREATE TABLE dbo.CartDetail (
-    ID INT IDENTITY(1,1) NOT NULL,
-    CartID INT NOT NULL,
-    ProductVariantID INT NOT NULL,
-    Quantity INT NOT NULL DEFAULT 1,
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
+-- DROP TABLE ShopBGiay.dbo.[Role];
 
-    CONSTRAINT PK_CartDetail PRIMARY KEY (ID),
-    CONSTRAINT UQ_CartDetail UNIQUE (CartID, ProductVariantID),
-    CONSTRAINT FK_CartDetail_Cart 
-        FOREIGN KEY (CartID) REFERENCES dbo.Cart(ID) ON DELETE CASCADE,
-    CONSTRAINT FK_CartDetail_ProductVariant 
-        FOREIGN KEY (ProductVariantID) REFERENCES dbo.ProductVariant(ID),
-    CONSTRAINT CK_CartDetail_Quantity CHECK (Quantity > 0)
-);
+CREATE TABLE ShopBGiay.dbo.[Role] ( ID int IDENTITY(1,1) NOT NULL, Name varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Description varchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CONSTRAINT PK__Role__3214EC271958A971 PRIMARY KEY (ID), CONSTRAINT UQ__Role__737584F6B9511F40 UNIQUE (Name));
 
--- 8. ORDER MANAGEMENT
-CREATE TABLE dbo.[Order] (
-    ID INT IDENTITY(1,1) NOT NULL,
-    Code VARCHAR(100) NOT NULL,
-    CustomerID INT NOT NULL,
-    
-    -- Delivery Info
-    ReceiverName NVARCHAR(100) NOT NULL,
-    ReceiverPhone VARCHAR(30) NOT NULL,
-    DeliveryAddress NVARCHAR(500) NOT NULL,
-    
-    -- Order Info
-    Note NVARCHAR(1000) NULL,
-    Status VARCHAR(50) NOT NULL DEFAULT 'Pending',
-    PaymentMethod VARCHAR(50) NOT NULL,
-    PaymentStatus VARCHAR(50) NOT NULL DEFAULT 'Unpaid',
-    
-    -- Money
-    SubTotal DECIMAL(18,2) NOT NULL,
-    ShippingFee DECIMAL(18,2) NOT NULL DEFAULT 0,
-    Total DECIMAL(18,2) NOT NULL,
-    
-    -- Dates
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
-    UpdateDate DATETIME NULL,
-    CompletedDate DATETIME NULL,
 
-    CONSTRAINT PK_Order PRIMARY KEY (ID),
-    CONSTRAINT UQ_Order_Code UNIQUE (Code),
-    CONSTRAINT FK_Order_Customer 
-        FOREIGN KEY (CustomerID) REFERENCES dbo.Account(ID),
-    CONSTRAINT CK_Order_Total CHECK (Total >= 0)
-);
+-- ShopBGiay.dbo.[Size] definition
 
-CREATE TABLE dbo.OrderDetail (
-    ID INT IDENTITY(1,1) NOT NULL,
-    OrderID INT NOT NULL,
-    ProductVariantID INT NOT NULL,
-    
-    ProductName NVARCHAR(255) NOT NULL,
-    Color NVARCHAR(50) NOT NULL,
-    Size VARCHAR(10) NOT NULL,
-    
-    Quantity INT NOT NULL,
-    Price DECIMAL(18,2) NOT NULL,
-    Total DECIMAL(18,2) NOT NULL,
-    
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
+-- Drop table
 
-    CONSTRAINT PK_OrderDetail PRIMARY KEY (ID),
-    CONSTRAINT FK_OrderDetail_Order 
-        FOREIGN KEY (OrderID) REFERENCES dbo.[Order](ID) ON DELETE CASCADE,
-    CONSTRAINT FK_OrderDetail_ProductVariant 
-        FOREIGN KEY (ProductVariantID) REFERENCES dbo.ProductVariant(ID),
-    CONSTRAINT CK_OrderDetail_Quantity CHECK (Quantity > 0),
-    CONSTRAINT CK_OrderDetail_Price CHECK (Price >= 0)
-);
+-- DROP TABLE ShopBGiay.dbo.[Size];
 
--- 9. ORDER STATUS HISTORY (for tracking)
-CREATE TABLE dbo.OrderStatusHistory (
-    ID INT IDENTITY(1,1) NOT NULL,
-    OrderID INT NOT NULL,
-    FromStatus VARCHAR(50) NULL,
-    ToStatus VARCHAR(50) NOT NULL,
-    Note NVARCHAR(500) NULL,
-    CreatedBy VARCHAR(100) NULL,
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
+CREATE TABLE ShopBGiay.dbo.[Size] ( ID int IDENTITY(1,1) NOT NULL, SizeName varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Quantity int NULL, CONSTRAINT PK__Size__3214EC271C999E6C PRIMARY KEY (ID));
 
-    CONSTRAINT PK_OrderStatusHistory PRIMARY KEY (ID),
-    CONSTRAINT FK_OrderStatusHistory_Order 
-        FOREIGN KEY (OrderID) REFERENCES dbo.[Order](ID) ON DELETE CASCADE
-);
 
--- 10. VOUCHER
-CREATE TABLE dbo.Voucher (
-    ID INT IDENTITY(1,1) NOT NULL,
-    Code VARCHAR(50) NOT NULL,
-    Description NVARCHAR(1000) NULL,
-    
-    -- Discount Values (can use both or either)
-    PercentDiscount DECIMAL(5,2) NULL, -- 0-100%
-    FixedDiscount DECIMAL(18,2) NULL, -- Fixed amount
-    Quantity INT NOT NULL,
-    
-    -- Conditions
-    MinOrderAmount DECIMAL(18,2) NOT NULL DEFAULT 0,
-    CategoryID INT NULL, -- Apply to specific category
-    ProductID INT NULL, -- Apply to specific product
-    Status VARCHAR(50) NOT NULL DEFAULT 'Active',
-    StartDate DATETIME NOT NULL,
-    EndDate DATETIME NOT NULL,
-    
-    CreateDate DATETIME NOT NULL DEFAULT GETDATE(),
-    UpdateDate DATETIME NULL,
+-- ShopBGiay.dbo.AccountRole definition
 
-    CONSTRAINT PK_Voucher PRIMARY KEY (ID),
-    CONSTRAINT UQ_Voucher_Code UNIQUE (Code),
-    CONSTRAINT FK_Voucher_Category 
-        FOREIGN KEY (CategoryID) REFERENCES dbo.Category(ID),
-    CONSTRAINT FK_Voucher_Product 
-        FOREIGN KEY (ProductID) REFERENCES dbo.Product(ID),
-    CONSTRAINT CK_Voucher_Dates 
-        CHECK (EndDate >= StartDate),
-    CONSTRAINT CK_Voucher_Quantity 
-        CHECK (Quantity > 0),
-    CONSTRAINT CK_Voucher_PercentDiscount 
-        CHECK (PercentDiscount IS NULL OR (PercentDiscount >= 0 AND PercentDiscount <= 100)),
-    CONSTRAINT CK_Voucher_FixedDiscount 
-        CHECK (FixedDiscount IS NULL OR FixedDiscount >= 0),
-    CONSTRAINT CK_Voucher_HasDiscount 
-        CHECK (PercentDiscount IS NOT NULL OR FixedDiscount IS NOT NULL)
-);
+-- Drop table
 
--- ===================================
--- INDEXES FOR PERFORMANCE
--- ===================================
+-- DROP TABLE ShopBGiay.dbo.AccountRole;
 
--- Account
-CREATE INDEX IX_Account_Email ON dbo.Account(Email);
-CREATE INDEX IX_Account_Status ON dbo.Account(Status);
+CREATE TABLE ShopBGiay.dbo.AccountRole ( ID int IDENTITY(1,1) NOT NULL, AccountID int NULL, RoleID int NULL, CONSTRAINT PK__AccountR__3214EC27FA5C381B PRIMARY KEY (ID), CONSTRAINT FK__AccountRo__Accou__3E52440B FOREIGN KEY (AccountID) REFERENCES ShopBGiay.dbo.Account(ID), CONSTRAINT FK__AccountRo__RoleI__3F466844 FOREIGN KEY (RoleID) REFERENCES ShopBGiay.dbo.[Role](ID));
 
--- Product
-CREATE INDEX IX_Product_BrandID ON dbo.Product(BrandID);
-CREATE INDEX IX_Product_CategoryID ON dbo.Product(CategoryID);
-CREATE INDEX IX_Product_Status ON dbo.Product(Status);
 
--- ProductVariant
-CREATE INDEX IX_ProductVariant_ProductID ON dbo.ProductVariant(ProductID);
-CREATE INDEX IX_ProductVariant_Status ON dbo.ProductVariant(Status);
+-- ShopBGiay.dbo.Address definition
 
--- ProductVariantImage
-CREATE INDEX IX_ProductVariantImage_ProductVariantID ON dbo.ProductVariantImage(ProductVariantID);
-CREATE INDEX IX_ProductVariantImage_ImageID ON dbo.ProductVariantImage(ImageID);
-CREATE INDEX IX_ProductVariantImage_IsMain ON dbo.ProductVariantImage(IsMain);
+-- Drop table
 
--- Order
-CREATE INDEX IX_Order_CustomerID ON dbo.[Order](CustomerID);
-CREATE INDEX IX_Order_Status ON dbo.[Order](Status);
-CREATE INDEX IX_Order_CreateDate ON dbo.[Order](CreateDate);
+-- DROP TABLE ShopBGiay.dbo.Address;
 
--- OrderDetail
-CREATE INDEX IX_OrderDetail_OrderID ON dbo.OrderDetail(OrderID);
+CREATE TABLE ShopBGiay.dbo.Address ( ID int IDENTITY(1,1) NOT NULL, ProvinceName nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, DistrictName nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, WardName nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ReceiverName nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ReceiverPhone nvarchar(30) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ReceiverEmail nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, AccountID int NULL, ProvinceId int NULL, DistrictId int NULL, WardCode varchar(20) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CONSTRAINT PK__Address__3214EC2732AEAD62 PRIMARY KEY (ID), CONSTRAINT FK__Address__Account__4222D4EF FOREIGN KEY (AccountID) REFERENCES ShopBGiay.dbo.Account(ID));
 
--- Address
-CREATE INDEX IX_Address_AccountID ON dbo.Address(AccountID);
 
--- Cart
-CREATE INDEX IX_Cart_AccountID ON dbo.Cart(AccountID);
+-- ShopBGiay.dbo.BrandBanner definition
 
--- CartDetail
-CREATE INDEX IX_CartDetail_CartID ON dbo.CartDetail(CartID);
-CREATE INDEX IX_CartDetail_ProductVariantID ON dbo.CartDetail(ProductVariantID);
+-- Drop table
 
--- Voucher
-CREATE INDEX IX_Voucher_Code ON dbo.Voucher(Code);
-CREATE INDEX IX_Voucher_Status ON dbo.Voucher(Status);
-CREATE INDEX IX_Voucher_CategoryID ON dbo.Voucher(CategoryID);
-CREATE INDEX IX_Voucher_ProductID ON dbo.Voucher(ProductID);
-CREATE INDEX IX_Voucher_Dates ON dbo.Voucher(StartDate, EndDate);
+-- DROP TABLE ShopBGiay.dbo.BrandBanner;
 
--- ===================================
--- INITIAL DATA
--- ===================================
+CREATE TABLE ShopBGiay.dbo.BrandBanner ( ID int IDENTITY(1,1) NOT NULL, Brand nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL, ImageID int NOT NULL, DisplayOrder int DEFAULT 0 NULL, Status nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS DEFAULT 'Active' NULL, CreateDate datetime DEFAULT getdate() NULL, UpdateDate datetime NULL, CreateBy nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, UpdateBy nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CONSTRAINT PK__BrandBan__3214EC2744D899AE PRIMARY KEY (ID), CONSTRAINT FK_BrandBanner_Image FOREIGN KEY (ImageID) REFERENCES ShopBGiay.dbo.[Image](ID) ON DELETE CASCADE);
+ CREATE NONCLUSTERED INDEX IX_BrandBanner_Brand ON ShopBGiay.dbo.BrandBanner (  Brand ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+ CREATE NONCLUSTERED INDEX IX_BrandBanner_Status ON ShopBGiay.dbo.BrandBanner (  Status ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
 
--- Insert default roles
-INSERT INTO dbo.[Role] (Name, Description) VALUES 
-('Admin', N'Quản trị viên hệ thống'),
-('Manager', N'Quản lý cửa hàng'),
-('Staff', N'Nhân viên bán hàng'),
-('Customer', N'Khách hàng');
 
--- Insert sample brands
-INSERT INTO dbo.Brand (Name, Description) VALUES 
-(N'Nike', N'Thương hiệu thể thao hàng đầu thế giới'),
-(N'Adidas', N'Thương hiệu thể thao Đức'),
-(N'Puma', N'Thương hiệu thể thao quốc tế'),
-(N'New Balance', N'Giày thể thao Mỹ'),
-(N'Vans', N'Giày sneaker street style');
+-- ShopBGiay.dbo.Cart definition
 
--- Insert sample categories
-INSERT INTO dbo.Category (Name, Description) VALUES 
-(N'Giày thể thao', N'Giày thể thao, running'),
-(N'Giày lifestyle', N'Giày đi hàng ngày'),
-(N'Giày cao cổ', N'Giày sneaker cao cổ'),
-(N'Giày slip-on', N'Giày không dây');
+-- Drop table
 
--- Insert sample vouchers
-INSERT INTO dbo.Voucher (Code, Description, PercentDiscount, FixedDiscount, Quantity, MinOrderAmount, CategoryID, ProductID, Status, StartDate, EndDate) VALUES 
-(N'WELCOME10', N'Giảm 10% cho đơn hàng đầu tiên', 10, NULL, 100, 0, NULL, NULL, 'Active', GETDATE(), DATEADD(MONTH, 6, GETDATE())),
-(N'SUMMER50K', N'Giảm 50k cho đơn từ 500k', NULL, 50000, 50, 500000, NULL, NULL, 'Active', GETDATE(), DATEADD(MONTH, 3, GETDATE())),
-(N'FREESHIP', N'Miễn phí ship cho đơn từ 300k', NULL, 30000, 200, 300000, NULL, NULL, 'Active', GETDATE(), DATEADD(MONTH, 12, GETDATE())),
-(N'SPORT20', N'Giảm 20% cho giày thể thao', 20, NULL, 30, 0, 1, NULL, 'Active', GETDATE(), DATEADD(MONTH, 2, GETDATE()));
+-- DROP TABLE ShopBGiay.dbo.Cart;
+
+CREATE TABLE ShopBGiay.dbo.Cart ( ID int IDENTITY(1,1) NOT NULL, CreateDate datetime NULL, EndDate datetime NULL, AccountID int NULL, CONSTRAINT PK__Cart__3214EC271F193365 PRIMARY KEY (ID), CONSTRAINT FK__Cart__AccountID__5535A963 FOREIGN KEY (AccountID) REFERENCES ShopBGiay.dbo.Account(ID));
+
+
+-- ShopBGiay.dbo.[Order] definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.[Order];
+
+CREATE TABLE ShopBGiay.dbo.[Order] ( ID int IDENTITY(1,1) NOT NULL, Description text COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Total decimal(15,2) NULL, CreateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime NULL, DeliveryDate datetime NULL, UpdateDate datetime NULL, ProductDiscount decimal(15,2) NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CustomerID int NULL, EmployeeID int NULL, AddressDeliveryID int NULL, ReceiverName nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ReceiverPhone varchar(30) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ReceiverAddress nvarchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ProductTotal decimal(15,2) NULL, Code varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ShippingFee decimal(15,2) DEFAULT 0 NULL, VoucherCode varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, VoucherDiscount decimal(15,2) DEFAULT 0 NULL, PaymentMethod varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PaymentStatus varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ShippingStatus varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, EstimatedDeliveryDate datetime NULL, ActualWeight int NULL, Note text COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CONSTRAINT PK__Order__3214EC271E025CDC PRIMARY KEY (ID), CONSTRAINT FK__Order__AddressDe__5DCAEF64 FOREIGN KEY (AddressDeliveryID) REFERENCES ShopBGiay.dbo.Address(ID), CONSTRAINT FK__Order__CustomerI__5BE2A6F2 FOREIGN KEY (CustomerID) REFERENCES ShopBGiay.dbo.Account(ID), CONSTRAINT FK__Order__EmployeeI__5CD6CB2B FOREIGN KEY (EmployeeID) REFERENCES ShopBGiay.dbo.Account(ID));
+
+
+-- ShopBGiay.dbo.OrderStatusHistory definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.OrderStatusHistory;
+
+CREATE TABLE ShopBGiay.dbo.OrderStatusHistory ( ID int IDENTITY(1,1) NOT NULL, OrderID int NOT NULL, FromStatus nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ToStatus nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Note text COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreatedBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime DEFAULT getdate() NULL, CONSTRAINT PK__OrderSta__3214EC273EAC1B26 PRIMARY KEY (ID), CONSTRAINT FK__OrderStat__Order__0C85DE4D FOREIGN KEY (OrderID) REFERENCES ShopBGiay.dbo.[Order](ID) ON DELETE CASCADE);
+ CREATE NONCLUSTERED INDEX IDX_OrderStatusHistory_OrderID ON ShopBGiay.dbo.OrderStatusHistory (  OrderID ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+
+
+-- ShopBGiay.dbo.Payment definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.Payment;
+
+CREATE TABLE ShopBGiay.dbo.Payment ( ID int IDENTITY(1,1) NOT NULL, OrderID int NOT NULL, TransactionNo varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, BankCode varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CardType varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PaymentMethod varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Amount decimal(15,2) NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ResponseCode varchar(10) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, ResponseMessage varchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, SecureHash varchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime DEFAULT getdate() NULL, UpdateDate datetime NULL, PaidDate datetime NULL, CONSTRAINT PK__Payment__3214EC272F161BC2 PRIMARY KEY (ID), CONSTRAINT FK__Payment__OrderID__02FC7413 FOREIGN KEY (OrderID) REFERENCES ShopBGiay.dbo.[Order](ID) ON DELETE CASCADE);
+ CREATE NONCLUSTERED INDEX IDX_Payment_OrderID ON ShopBGiay.dbo.Payment (  OrderID ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+ CREATE NONCLUSTERED INDEX IDX_Payment_TransactionNo ON ShopBGiay.dbo.Payment (  TransactionNo ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+
+
+-- ShopBGiay.dbo.Product definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.Product;
+
+CREATE TABLE ShopBGiay.dbo.Product ( ID int IDENTITY(1,1) NOT NULL, Name nvarchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Code varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Brand varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Description nvarchar(1000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CategoryID int NULL, CreateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime NULL, UpdateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, UpdateDate datetime NULL, IsActive bit DEFAULT 1 NOT NULL, Weight int DEFAULT 1000 NOT NULL, CONSTRAINT PK__Product__3214EC27C28975DA PRIMARY KEY (ID), CONSTRAINT FK__Product__Categor__46E78A0C FOREIGN KEY (CategoryID) REFERENCES ShopBGiay.dbo.Category(ID));
+
+
+-- ShopBGiay.dbo.ProductDetail definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.ProductDetail;
+
+CREATE TABLE ShopBGiay.dbo.ProductDetail ( ID int IDENTITY(1,1) NOT NULL, Price decimal(15,2) NULL, Quantity int NULL, ImageID int NULL, ColorID int NULL, SizeID int NULL, ProductID int NULL, CreateDate datetime NULL, CONSTRAINT PK__ProductD__3214EC2759E29E4C PRIMARY KEY (ID), CONSTRAINT FK__ProductDe__Color__5070F446 FOREIGN KEY (ColorID) REFERENCES ShopBGiay.dbo.Color(ID), CONSTRAINT FK__ProductDe__Image__4F7CD00D FOREIGN KEY (ImageID) REFERENCES ShopBGiay.dbo.[Image](ID), CONSTRAINT FK__ProductDe__Produ__52593CB8 FOREIGN KEY (ProductID) REFERENCES ShopBGiay.dbo.Product(ID), CONSTRAINT FK__ProductDe__SizeI__5165187F FOREIGN KEY (SizeID) REFERENCES ShopBGiay.dbo.[Size](ID));
+
+
+-- ShopBGiay.dbo.ProductDetailImage definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.ProductDetailImage;
+
+CREATE TABLE ShopBGiay.dbo.ProductDetailImage ( ID int IDENTITY(1,1) NOT NULL, ProductDetailID int NOT NULL, ImageID int NOT NULL, DisplayOrder int DEFAULT 0 NULL, CreateDate datetime DEFAULT getdate() NULL, CONSTRAINT PK__ProductD__3214EC27A4E3FDFE PRIMARY KEY (ID), CONSTRAINT UQ__ProductD__EBDCB9DB98A1F9A8 UNIQUE (ProductDetailID,ImageID), CONSTRAINT FK__ProductDe__Image__6B24EA82 FOREIGN KEY (ImageID) REFERENCES ShopBGiay.dbo.[Image](ID) ON DELETE CASCADE, CONSTRAINT FK__ProductDe__Produ__6A30C649 FOREIGN KEY (ProductDetailID) REFERENCES ShopBGiay.dbo.ProductDetail(ID) ON DELETE CASCADE);
+ CREATE NONCLUSTERED INDEX IX_ProductDetailImage_ImageID ON ShopBGiay.dbo.ProductDetailImage (  ImageID ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+ CREATE NONCLUSTERED INDEX IX_ProductDetailImage_ProductDetailID ON ShopBGiay.dbo.ProductDetailImage (  ProductDetailID ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+
+
+-- ShopBGiay.dbo.Shipment definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.Shipment;
+
+CREATE TABLE ShopBGiay.dbo.Shipment ( ID int IDENTITY(1,1) NOT NULL, OrderID int NOT NULL, ShipmentCode varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PartnerCode varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PickAddress varchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PickProvince varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PickDistrict varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PickWard varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PickTel varchar(30) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, PickName varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, DeliveryAddress varchar(500) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, DeliveryProvince varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, DeliveryDistrict varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, DeliveryWard varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, DeliveryTel varchar(30) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, DeliveryName varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Weight int NULL, Value decimal(15,2) NULL, ShippingFee decimal(15,2) NULL, InsuranceFee decimal(15,2) DEFAULT 0 NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, StatusText varchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime DEFAULT getdate() NULL, UpdateDate datetime NULL, PickedDate datetime NULL, DeliveredDate datetime NULL, EstimatedDeliveryDate datetime NULL, Note text COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CONSTRAINT PK__Shipment__3214EC27E9CB7BFA PRIMARY KEY (ID), CONSTRAINT FK__Shipment__OrderI__08B54D69 FOREIGN KEY (OrderID) REFERENCES ShopBGiay.dbo.[Order](ID) ON DELETE CASCADE);
+ CREATE NONCLUSTERED INDEX IDX_Shipment_OrderID ON ShopBGiay.dbo.Shipment (  OrderID ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+ CREATE NONCLUSTERED INDEX IDX_Shipment_ShipmentCode ON ShopBGiay.dbo.Shipment (  ShipmentCode ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+
+
+-- ShopBGiay.dbo.Voucher definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.Voucher;
+
+CREATE TABLE ShopBGiay.dbo.Voucher ( ID int IDENTITY(1,1) NOT NULL, Code varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Name nvarchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, [Type] varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Discount decimal(15,2) NULL, MaxDiscount decimal(15,2) NULL, Quantity int NULL, Description nvarchar(1000) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Status varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, StartDate datetime NULL, EndDate datetime NULL, CreateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime NULL, UpdateBy varchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, UpdateDate datetime NULL, CategoryID int NULL, CONSTRAINT PK__tmp_ms_x__3214EC2799D75436 PRIMARY KEY (ID), CONSTRAINT FK__Voucher__Categor__6E01572D FOREIGN KEY (CategoryID) REFERENCES ShopBGiay.dbo.Category(ID));
+
+
+-- ShopBGiay.dbo.CartDetail definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.CartDetail;
+
+CREATE TABLE ShopBGiay.dbo.CartDetail ( ID int IDENTITY(1,1) NOT NULL, Quantity int NULL, CartID int NULL, ProductDetailID int NULL, CONSTRAINT PK__CartDeta__3214EC27B3794465 PRIMARY KEY (ID), CONSTRAINT FK__CartDetai__CartI__5812160E FOREIGN KEY (CartID) REFERENCES ShopBGiay.dbo.Cart(ID), CONSTRAINT FK__CartDetai__Produ__59063A47 FOREIGN KEY (ProductDetailID) REFERENCES ShopBGiay.dbo.ProductDetail(ID));
+
+
+-- ShopBGiay.dbo.Discount definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.Discount;
+
+CREATE TABLE ShopBGiay.dbo.Discount ( ID int IDENTITY(1,1) NOT NULL, ProductID int NOT NULL, DiscountType nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL, DiscountValue decimal(15,2) NOT NULL, StartDate datetime NOT NULL, EndDate datetime NOT NULL, Status nvarchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS DEFAULT 'Active' NULL, CreateBy nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, CreateDate datetime DEFAULT getdate() NULL, UpdateBy nvarchar(100) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, UpdateDate datetime NULL, CONSTRAINT PK__Discount__3214EC2744886581 PRIMARY KEY (ID), CONSTRAINT FK_Discount_Product FOREIGN KEY (ProductID) REFERENCES ShopBGiay.dbo.Product(ID) ON DELETE CASCADE);
+ CREATE NONCLUSTERED INDEX IX_Discount_Dates ON ShopBGiay.dbo.Discount (  StartDate ASC  , EndDate ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+ CREATE NONCLUSTERED INDEX IX_Discount_ProductID ON ShopBGiay.dbo.Discount (  ProductID ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+ CREATE NONCLUSTERED INDEX IX_Discount_Status ON ShopBGiay.dbo.Discount (  Status ASC  )  
+	 WITH (  PAD_INDEX = OFF ,FILLFACTOR = 100  ,SORT_IN_TEMPDB = OFF , IGNORE_DUP_KEY = OFF , STATISTICS_NORECOMPUTE = OFF , ONLINE = OFF , ALLOW_ROW_LOCKS = ON , ALLOW_PAGE_LOCKS = ON  )
+	 ON [PRIMARY ] ;
+ALTER TABLE ShopBGiay.dbo.Discount WITH NOCHECK ADD CONSTRAINT CK_Discount_Type CHECK (([DiscountType]='Fixed' OR [DiscountType]='Percentage'));
+ALTER TABLE ShopBGiay.dbo.Discount WITH NOCHECK ADD CONSTRAINT CK_Discount_Value CHECK (([DiscountValue]>=(0)));
+ALTER TABLE ShopBGiay.dbo.Discount WITH NOCHECK ADD CONSTRAINT CK_Discount_Dates CHECK (([EndDate]>=[StartDate]));
+
+
+-- ShopBGiay.dbo.OrderDetail definition
+
+-- Drop table
+
+-- DROP TABLE ShopBGiay.dbo.OrderDetail;
+
+CREATE TABLE ShopBGiay.dbo.OrderDetail ( ID int IDENTITY(1,1) NOT NULL, Quantity int NULL, ProductName varchar(255) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, Price decimal(15,2) NULL, ProductDetailID int NULL, OrderID int NULL, CreateDate datetime NULL, OriginalPrice decimal(15,2) NULL, DiscountType varchar(50) COLLATE SQL_Latin1_General_CP1_CI_AS NULL, DiscountValue decimal(15,2) NULL, FinalPrice decimal(15,2) NULL, CONSTRAINT PK__OrderDet__3214EC2734AD78DD PRIMARY KEY (ID), CONSTRAINT FK__OrderDeta__Order__619B8048 FOREIGN KEY (OrderID) REFERENCES ShopBGiay.dbo.[Order](ID), CONSTRAINT FK__OrderDeta__Produ__60A75C0F FOREIGN KEY (ProductDetailID) REFERENCES ShopBGiay.dbo.ProductDetail(ID));

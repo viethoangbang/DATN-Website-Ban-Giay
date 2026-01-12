@@ -5,7 +5,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="mb-8 animate-fade-in-up">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Tài khoản của tôi</h1>
-        <p class="text-gray-600">Quản lý thông tin cá nhân và đơn hàng</p>
+        <p class="text-gray-600">Quản lý thông tin cá nhân</p>
       </div>
 
       <div v-if="loading" class="flex justify-center py-12">
@@ -223,85 +223,6 @@
             </form>
           </div>
 
-          <!-- Orders -->
-          <div v-if="activeTab === 'orders'" class="space-y-4 animate-fade-in-up">
-            <div class="flex justify-between items-center mb-4">
-              <h2 class="text-xl font-bold text-gray-900">Đơn hàng của tôi</h2>
-              <router-link
-                to="/orders"
-                class="btn-secondary text-sm"
-              >
-                Xem tất cả đơn hàng
-              </router-link>
-            </div>
-            
-            <div
-              v-for="order in orders"
-              :key="order.id"
-              class="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow"
-            >
-              <div class="flex justify-between items-start mb-4">
-                <div>
-                  <h3 class="font-bold text-gray-900">Đơn hàng #{{ order.code || order.id }}</h3>
-                  <p class="text-sm text-gray-600">{{ formatDate(order.createDate) }}</p>
-                </div>
-                <span :class="getStatusClass(order.status)" class="px-4 py-2 rounded-full text-sm font-semibold">
-                  {{ getStatusLabel(order.status) }}
-                </span>
-              </div>
-
-              <div v-if="order.items && order.items.length > 0" class="space-y-3 mb-4">
-                <div v-for="item in order.items" :key="item.id" class="flex items-center space-x-4 border-b pb-3 last:border-0">
-                  <div class="flex-1">
-                    <h4 class="font-semibold text-gray-900">{{ item.productName || 'Sản phẩm' }}</h4>
-                    <p class="text-sm text-gray-600">Số lượng: {{ item.quantity || 1 }}</p>
-                    <p class="text-sm text-gray-600">Đơn giá: {{ formatPrice(item.price || 0) }}</p>
-                  </div>
-                  <span class="font-bold text-gray-900">{{ formatPrice((item.price || 0) * (item.quantity || 1)) }}</span>
-                </div>
-              </div>
-
-              <div class="border-t pt-4 space-y-2">
-                <div v-if="order.subTotal" class="flex justify-between text-sm text-gray-600">
-                  <span>Tạm tính:</span>
-                  <span>{{ formatPrice(order.subTotal) }}</span>
-                </div>
-                <div v-if="order.discount" class="flex justify-between text-sm text-gray-600">
-                  <span>Giảm giá:</span>
-                  <span class="text-red-600">-{{ formatPrice(order.discount) }}</span>
-                </div>
-                <div class="flex justify-between items-center border-t pt-2">
-                  <span class="text-gray-700 font-semibold">Tổng cộng:</span>
-                  <span class="text-2xl font-bold text-primary-600">{{ formatPrice(order.total || 0) }}</span>
-                </div>
-              </div>
-
-              <div v-if="order.receiverName || order.receiverPhone || order.receiverAddress" class="mt-4 pt-4 border-t">
-                <p class="text-sm font-semibold text-gray-700 mb-2">Thông tin nhận hàng:</p>
-                <p class="text-sm text-gray-600" v-if="order.receiverName">Người nhận: {{ order.receiverName }}</p>
-                <p class="text-sm text-gray-600" v-if="order.receiverPhone">SĐT: {{ order.receiverPhone }}</p>
-                <p class="text-sm text-gray-600" v-if="order.receiverAddress">Địa chỉ: {{ order.receiverAddress }}</p>
-              </div>
-              
-              <div class="mt-4 pt-4 border-t">
-                <router-link
-                  :to="`/orders/${order.id}`"
-                  class="btn-secondary text-sm w-full text-center"
-                  @click.stop
-                >
-                  Xem chi tiết đơn hàng
-                </router-link>
-              </div>
-            </div>
-
-            <EmptyState
-              v-if="orders.length === 0"
-              title="Chưa có đơn hàng"
-              description="Bạn chưa có đơn hàng nào. Hãy bắt đầu mua sắm!"
-              action-text="Mua sắm ngay"
-              @action="$router.push('/products')"
-            />
-          </div>
 
           <!-- Address Book -->
           <div v-if="activeTab === 'addresses'" class="bg-white rounded-xl shadow-md p-6 animate-fade-in-up">
@@ -316,12 +237,10 @@
               <div
                 v-for="address in addresses"
                 :key="address.id"
-                class="border-2 rounded-lg p-4 hover:border-primary-500 transition-colors"
-                :class="{ 'border-primary-500 bg-primary-50': address.status === 'Active' }"
+                class="border-2 border-gray-200 rounded-lg p-4 hover:border-primary-500 transition-colors"
               >
                 <div class="flex justify-between items-start mb-2">
                   <h4 class="font-bold text-gray-900">{{ address.receiverName || 'Địa chỉ' }}</h4>
-                  <span v-if="address.status === 'Active'" class="badge-primary text-xs">Mặc định</span>
                 </div>
                 <p v-if="address.receiverPhone" class="text-gray-600 text-sm mb-1">{{ address.receiverPhone }}</p>
                 <p v-if="address.receiverEmail" class="text-gray-600 text-sm mb-1">{{ address.receiverEmail }}</p>
@@ -454,20 +373,43 @@
 
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Quận/Huyện *</label>
-          <select
-            v-model="addressForm.districtCode"
-            @change="onDistrictChange"
-            required
-            class="input-field"
-            :disabled="!addressForm.provinceCode || loadingDistricts"
-          >
-            <option value="">-- Chọn Quận/Huyện --</option>
-            <option v-for="district in districts" :key="district.code" :value="district.code">
-              {{ district.name }}
-            </option>
-          </select>
+          <div class="relative" ref="districtDropdownRef">
+            <input
+              v-model="districtSearchQuery"
+              @input="filterDistricts"
+              @focus="showDistrictDropdown = true"
+              type="text"
+              :placeholder="addressForm.districtName || 'Tìm kiếm hoặc chọn Quận/Huyện...'"
+              class="input-field w-full"
+              :disabled="!addressForm.provinceCode || loadingDistricts"
+            />
+            <div
+              v-if="showDistrictDropdown && filteredDistricts.length > 0"
+              class="absolute z-[60] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+            >
+              <div
+                v-for="district in filteredDistricts"
+                :key="district.code"
+                @click="selectDistrict(district)"
+                class="px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                :class="{ 'bg-primary-100': addressForm.districtCode === district.code }"
+              >
+                {{ district.name }}
+              </div>
+            </div>
+            <div
+              v-if="showDistrictDropdown && filteredDistricts.length === 0 && !loadingDistricts"
+              class="absolute z-[60] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500"
+            >
+              Không tìm thấy quận/huyện nào
+            </div>
+          </div>
           <input
             v-model="addressForm.districtName"
+            type="hidden"
+          />
+          <input
+            v-model="addressForm.districtCode"
             type="hidden"
           />
           <p v-if="loadingDistricts" class="text-xs text-gray-500 mt-1">Đang tải...</p>
@@ -476,20 +418,43 @@
 
         <div>
           <label class="block text-sm font-semibold text-gray-700 mb-2">Phường/Xã *</label>
-          <select
-            v-model="addressForm.wardCode"
-            @change="onWardChange"
-            required
-            class="input-field"
-            :disabled="!addressForm.districtCode || loadingWards"
-          >
-            <option value="">-- Chọn Phường/Xã --</option>
-            <option v-for="ward in wards" :key="ward.code" :value="ward.code">
-              {{ ward.name }}
-            </option>
-          </select>
+          <div class="relative" ref="wardDropdownRef">
+            <input
+              v-model="wardSearchQuery"
+              @input="filterWards"
+              @focus="showWardDropdown = true"
+              type="text"
+              :placeholder="addressForm.wardName || 'Tìm kiếm hoặc chọn Phường/Xã...'"
+              class="input-field w-full"
+              :disabled="!addressForm.districtCode || loadingWards"
+            />
+            <div
+              v-if="showWardDropdown && filteredWards.length > 0"
+              class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+            >
+              <div
+                v-for="ward in filteredWards"
+                :key="ward.code"
+                @click="selectWard(ward)"
+                class="px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                :class="{ 'bg-primary-100': addressForm.wardCode === ward.code }"
+              >
+                {{ ward.name }}
+              </div>
+            </div>
+            <div
+              v-if="showWardDropdown && filteredWards.length === 0 && !loadingWards"
+              class="absolute z-[60] w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500"
+            >
+              Không tìm thấy phường/xã nào
+            </div>
+          </div>
           <input
             v-model="addressForm.wardName"
+            type="hidden"
+          />
+          <input
+            v-model="addressForm.wardCode"
             type="hidden"
           />
           <p v-if="loadingWards" class="text-xs text-gray-500 mt-1">Đang tải...</p>
@@ -552,13 +517,21 @@ const addresses = ref([])
 const provinces = ref([])
 const filteredProvinces = ref([])
 const districts = ref([])
+const filteredDistricts = ref([])
 const wards = ref([])
+const filteredWards = ref([])
 const loadingProvinces = ref(false)
 const loadingDistricts = ref(false)
 const loadingWards = ref(false)
 const provinceSearchQuery = ref('')
+const districtSearchQuery = ref('')
+const wardSearchQuery = ref('')
 const showProvinceDropdown = ref(false)
+const showDistrictDropdown = ref(false)
+const showWardDropdown = ref(false)
 const provinceDropdownRef = ref(null)
+const districtDropdownRef = ref(null)
+const wardDropdownRef = ref(null)
 
 const addressForm = reactive({
   receiverName: '',
@@ -602,7 +575,6 @@ const LocationIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke
 
 const tabs = [
   { id: 'profile', name: 'Thông tin', icon: UserIcon },
-  { id: 'orders', name: 'Đơn hàng', icon: OrderIcon },
   { id: 'addresses', name: 'Địa chỉ', icon: LocationIcon }
 ]
 
@@ -932,7 +904,13 @@ async function onProvinceChange() {
   addressForm.wardCode = ''
   addressForm.wardName = ''
   districts.value = []
+  filteredDistricts.value = []
   wards.value = []
+  filteredWards.value = []
+  districtSearchQuery.value = ''
+  wardSearchQuery.value = ''
+  showDistrictDropdown.value = false
+  showWardDropdown.value = false
   
   if (!addressForm.provinceId) {
     addressForm.provinceName = ''
@@ -951,6 +929,15 @@ async function onProvinceChange() {
       name: d.districtName
     }))
     
+    // Sort districts by name
+    districts.value.sort((a, b) => {
+      const nameA = (a.name || '').toLowerCase()
+      const nameB = (b.name || '').toLowerCase()
+      return nameA.localeCompare(nameB)
+    })
+    
+    filteredDistricts.value = districts.value
+    
     if (districts.value.length === 0) {
       showToast('Không có dữ liệu quận/huyện cho tỉnh/thành phố này', 'warning')
     }
@@ -962,11 +949,36 @@ async function onProvinceChange() {
   }
 }
 
+function filterDistricts() {
+  const query = districtSearchQuery.value.toLowerCase().trim()
+  if (!query) {
+    filteredDistricts.value = districts.value
+  } else {
+    filteredDistricts.value = districts.value.filter(d => {
+      const name = (d.name || '').toLowerCase()
+      const code = (d.code || '').toLowerCase()
+      return name.includes(query) || code.includes(query)
+    })
+  }
+}
+
+function selectDistrict(district) {
+  addressForm.districtId = district.id
+  addressForm.districtCode = district.code
+  addressForm.districtName = district.name
+  districtSearchQuery.value = district.name
+  showDistrictDropdown.value = false
+  onDistrictChange()
+}
+
 async function onDistrictChange() {
   // Reset wards when district changes
   addressForm.wardCode = ''
   addressForm.wardName = ''
   wards.value = []
+  filteredWards.value = []
+  wardSearchQuery.value = ''
+  showWardDropdown.value = false
   
   if (!addressForm.districtCode) {
     addressForm.districtName = ''
@@ -991,6 +1003,15 @@ async function onDistrictChange() {
       name: w.wardName
     }))
     
+    // Sort wards by name
+    wards.value.sort((a, b) => {
+      const nameA = (a.name || '').toLowerCase()
+      const nameB = (b.name || '').toLowerCase()
+      return nameA.localeCompare(nameB)
+    })
+    
+    filteredWards.value = wards.value
+    
     if (wards.value.length === 0) {
       showToast('Không có dữ liệu phường/xã cho quận/huyện này', 'warning')
     }
@@ -1002,17 +1023,24 @@ async function onDistrictChange() {
   }
 }
 
-function onWardChange() {
-  if (!addressForm.wardCode) {
-    addressForm.wardName = ''
-    return
+function filterWards() {
+  const query = wardSearchQuery.value.toLowerCase().trim()
+  if (!query) {
+    filteredWards.value = wards.value
+  } else {
+    filteredWards.value = wards.value.filter(w => {
+      const name = (w.name || '').toLowerCase()
+      const code = (w.code || '').toLowerCase()
+      return name.includes(query) || code.includes(query)
+    })
   }
-  
-  // Find ward name from selected code
-  const selectedWard = wards.value.find(w => w.code === addressForm.wardCode)
-  if (selectedWard) {
-    addressForm.wardName = selectedWard.name
-  }
+}
+
+function selectWard(ward) {
+  addressForm.wardCode = ward.code
+  addressForm.wardName = ward.name
+  wardSearchQuery.value = ward.name
+  showWardDropdown.value = false
 }
 
 async function editAddress(address) {
@@ -1050,6 +1078,8 @@ async function editAddress(address) {
         )
         if (district) {
           addressForm.districtCode = district.code
+          addressForm.districtName = district.name
+          districtSearchQuery.value = district.name
           await onDistrictChange()
           
           // Try to find ward
@@ -1060,7 +1090,8 @@ async function editAddress(address) {
             )
             if (ward) {
               addressForm.wardCode = ward.code
-              onWardChange()
+              addressForm.wardName = ward.name
+              wardSearchQuery.value = ward.name
             }
           }
         }
@@ -1114,7 +1145,7 @@ async function saveAddress() {
       provinceId: addressForm.provinceId,
       districtId: addressForm.districtId,
       wardCode: addressForm.wardCode,
-      status: 'Inactive' // Tất cả địa chỉ mặc định là Inactive, sẽ chọn khi checkout
+      status: 'Active' // Mặc định là Active khi tạo mới
     }
 
     if (editingAddress.value) {
@@ -1142,9 +1173,15 @@ function closeAddressModal() {
   showAddressModal.value = false
   editingAddress.value = null
   districts.value = []
+  filteredDistricts.value = []
   wards.value = []
+  filteredWards.value = []
   provinceSearchQuery.value = ''
+  districtSearchQuery.value = ''
+  wardSearchQuery.value = ''
   showProvinceDropdown.value = false
+  showDistrictDropdown.value = false
+  showWardDropdown.value = false
   Object.assign(addressForm, {
     receiverName: '',
     receiverPhone: '',
@@ -1173,7 +1210,11 @@ watch(showAddressModal, async (isOpen) => {
     await loadProvinces()
   } else {
     showProvinceDropdown.value = false
+    showDistrictDropdown.value = false
+    showWardDropdown.value = false
     provinceSearchQuery.value = ''
+    districtSearchQuery.value = ''
+    wardSearchQuery.value = ''
   }
 })
 
@@ -1181,6 +1222,12 @@ watch(showAddressModal, async (isOpen) => {
 function handleClickOutside(event) {
   if (provinceDropdownRef.value && !provinceDropdownRef.value.contains(event.target)) {
     showProvinceDropdown.value = false
+  }
+  if (districtDropdownRef.value && !districtDropdownRef.value.contains(event.target)) {
+    showDistrictDropdown.value = false
+  }
+  if (wardDropdownRef.value && !wardDropdownRef.value.contains(event.target)) {
+    showWardDropdown.value = false
   }
 }
 

@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Data.Models;
 
 [Table("Category")]
-[Index("Name", Name = "UQ_Category_Name", IsUnique = true)]
 public partial class Category
 {
     [Key]
@@ -15,10 +14,32 @@ public partial class Category
     public int Id { get; set; }
 
     [StringLength(255)]
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; }
 
-    [StringLength(500)]
+    [StringLength(1000)]
     public string? Description { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? Status { get; set; }
+
+    [StringLength(100)]
+    [Unicode(false)]
+    public string? Condition { get; set; }
+
+    [StringLength(100)]
+    [Unicode(false)]
+    public string? CreateBy { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? CreateDate { get; set; }
+
+    [StringLength(100)]
+    [Unicode(false)]
+    public string? UpdateBy { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? UpdateDate { get; set; }
 
     [InverseProperty("Category")]
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();

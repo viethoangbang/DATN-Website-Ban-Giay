@@ -48,8 +48,10 @@
                 @error="handleImageError"
               />
               <div class="flex-1">
+                <p class="text-sm font-semibold text-blue-600 mb-1">ID biến thể: {{ item.productDetailId }}</p>
                 <p class="font-semibold">{{ item.productName }}</p>
                 <p class="text-sm text-gray-600">Số lượng: {{ item.quantity }}</p>
+                <p v-if="item.size || item.color" class="text-sm text-gray-600">{{ item.size }} / {{ item.color }}</p>
                 <div v-if="item.originalPrice && item.originalPrice > (item.finalPrice || item.price)" class="flex items-center gap-2">
                   <span class="text-sm text-gray-400 line-through">{{ formatPrice(item.originalPrice) }}</span>
                   <span class="text-sm font-semibold text-red-600">{{ formatPrice(item.finalPrice || item.price) }}</span>

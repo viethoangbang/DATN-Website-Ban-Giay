@@ -47,16 +47,6 @@ public class AuthController : ControllerBase
         return Ok(response);
     }
 
-    [HttpGet("test")]
-    public IActionResult Test()
-    {
-        return Ok(new
-        {
-            message = "Auth endpoint is working",
-            timestamp = DateTime.UtcNow
-        });
-    }
-
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request)
     {

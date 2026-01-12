@@ -3,57 +3,6 @@
     <Navbar />
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <!-- Step Indicator -->
-      <div class="mb-8">
-        <div class="flex items-center justify-center">
-          <!-- Step 1: Cart -->
-          <div class="flex items-center">
-            <router-link to="/cart" class="flex flex-col items-center group">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary-600 text-white font-semibold mb-2 group-hover:bg-primary-700 transition-colors">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <span class="text-sm font-medium text-gray-900">Giỏ hàng</span>
-            </router-link>
-          </div>
-          
-          <!-- Connector 1 -->
-          <div class="flex-1 mx-4 h-0.5 bg-primary-600 max-w-xs"></div>
-          
-          <!-- Step 2: Checkout (Current) -->
-          <div class="flex items-center">
-            <div class="flex flex-col items-center">
-              <div class="flex items-center justify-center w-10 h-10 rounded-full bg-primary-600 text-white font-semibold mb-2 ring-4 ring-primary-200">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <span class="text-sm font-semibold text-primary-600">Thanh toán</span>
-            </div>
-          </div>
-          
-          <!-- Connector 2 -->
-          <div class="flex-1 mx-4 h-0.5 max-w-xs transition-all duration-1000" 
-               :class="showComplete ? 'bg-primary-600' : 'bg-gray-300'"></div>
-          
-          <!-- Step 3: Complete -->
-          <div class="flex items-center">
-            <div class="step-complete flex flex-col items-center relative" :class="showComplete ? 'opacity-100' : 'opacity-50'">
-              <div 
-                class="flex items-center justify-center w-10 h-10 rounded-full font-semibold mb-2 transition-all duration-1000 relative"
-                :class="showComplete ? 'bg-primary-600 text-white scale-110 ring-4 ring-primary-200 animate-bounce' : 'bg-gray-300 text-gray-500'"
-              >
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-              <span class="text-sm font-medium transition-all duration-1000" 
-                    :class="showComplete ? 'text-primary-600 font-semibold' : 'text-gray-500'">Hoàn thành</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <h1 class="text-3xl font-bold text-gray-900 mb-8">Thanh toán</h1>
 
@@ -223,6 +172,7 @@
               <div v-for="item in cartStore.items" :key="item.productDetailId" class="flex gap-3">
                 <img :src="item.image" alt="" class="w-16 h-16 object-cover rounded" />
                 <div class="flex-1 min-w-0">
+                  <p class="text-xs font-semibold text-blue-600 mb-1">ID: {{ item.productDetailId }}</p>
                   <p class="text-sm font-medium truncate">{{ item.name }}</p>
                   <p class="text-xs text-gray-500">{{ getCategoryName(item) }} - {{ getBrandName(item) }}</p>
                   <p class="text-xs text-gray-600">{{ item.size }} / {{ item.color }}</p>

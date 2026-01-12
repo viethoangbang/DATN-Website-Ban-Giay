@@ -72,6 +72,10 @@ public class OrderDetailResponseDto
     // Image
     public string? ImageUrl { get; set; }
     
+    // Variant info
+    public string? Size { get; set; }
+    public string? Color { get; set; }
+    
     public DateTime? CreateDate { get; set; }
 }
 

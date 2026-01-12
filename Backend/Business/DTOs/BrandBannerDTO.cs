@@ -5,7 +5,8 @@ namespace Business.DTOs;
 public class BrandBannerResponseDto
 {
     public int Id { get; set; }
-    public string Brand { get; set; } = null!;
+    public string Brand { get; set; } = null!; // Brand name (for backward compatibility)
+    public int? BrandId { get; set; }
     public int ImageId { get; set; }
     public string? ImageUrl { get; set; }
     public int? DisplayOrder { get; set; }
@@ -16,9 +17,11 @@ public class BrandBannerResponseDto
 
 public class BrandBannerCreateDto
 {
-    [Required(ErrorMessage = "Brand is required")]
     [MaxLength(100, ErrorMessage = "Brand name cannot exceed 100 characters")]
-    public string Brand { get; set; } = null!;
+    public string? Brand { get; set; } // Keep for backward compatibility
+
+    [Range(1, int.MaxValue, ErrorMessage = "Invalid brand ID")]
+    public int? BrandId { get; set; } // Use BrandId if provided
 
     [Required(ErrorMessage = "Image ID is required")]
     [Range(1, int.MaxValue, ErrorMessage = "Invalid image ID")]
@@ -34,7 +37,10 @@ public class BrandBannerCreateDto
 public class BrandBannerUpdateDto
 {
     [MaxLength(100, ErrorMessage = "Brand name cannot exceed 100 characters")]
-    public string? Brand { get; set; }
+    public string? Brand { get; set; } // Keep for backward compatibility
+
+    [Range(1, int.MaxValue, ErrorMessage = "Invalid brand ID")]
+    public int? BrandId { get; set; } // Use BrandId if provided
 
     [Range(1, int.MaxValue, ErrorMessage = "Invalid image ID")]
     public int? ImageId { get; set; }

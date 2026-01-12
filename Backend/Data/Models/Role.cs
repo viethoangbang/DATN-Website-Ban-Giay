@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Data.Models;
 
 [Table("Role")]
-[Index("Name", Name = "UQ_Role_Name", IsUnique = true)]
+[Index("Name", Name = "UQ__Role__737584F6B9511F40", IsUnique = true)]
 public partial class Role
 {
     [Key]
@@ -16,9 +16,10 @@ public partial class Role
 
     [StringLength(50)]
     [Unicode(false)]
-    public string Name { get; set; } = null!;
+    public string? Name { get; set; }
 
     [StringLength(255)]
+    [Unicode(false)]
     public string? Description { get; set; }
 
     [InverseProperty("Role")]

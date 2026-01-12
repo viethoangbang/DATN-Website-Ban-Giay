@@ -7,31 +7,25 @@ using Microsoft.EntityFrameworkCore;
 namespace Data.Models;
 
 [Table("CartDetail")]
-[Index("CartId", Name = "IX_CartDetail_CartID")]
-[Index("ProductVariantId", Name = "IX_CartDetail_ProductVariantID")]
-[Index("CartId", "ProductVariantId", Name = "UQ_CartDetail", IsUnique = true)]
 public partial class CartDetail
 {
     [Key]
     [Column("ID")]
     public int Id { get; set; }
 
+    public int? Quantity { get; set; }
+
     [Column("CartID")]
-    public int CartId { get; set; }
+    public int? CartId { get; set; }
 
-    [Column("ProductVariantID")]
-    public int ProductVariantId { get; set; }
-
-    public int Quantity { get; set; }
-
-    [Column(TypeName = "datetime")]
-    public DateTime CreateDate { get; set; }
+    [Column("ProductDetailID")]
+    public int? ProductDetailId { get; set; }
 
     [ForeignKey("CartId")]
     [InverseProperty("CartDetails")]
-    public virtual Cart Cart { get; set; } = null!;
+    public virtual Cart? Cart { get; set; }
 
-    [ForeignKey("ProductVariantId")]
+    [ForeignKey("ProductDetailId")]
     [InverseProperty("CartDetails")]
-    public virtual ProductVariant ProductVariant { get; set; } = null!;
+    public virtual ProductDetail? ProductDetail { get; set; }
 }

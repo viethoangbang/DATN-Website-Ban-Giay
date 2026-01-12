@@ -15,8 +15,22 @@ public partial class Image
 
     [StringLength(1000)]
     [Unicode(false)]
-    public string Url { get; set; } = null!;
+    public string? Url { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? Type { get; set; }
+
+    [StringLength(50)]
+    [Unicode(false)]
+    public string? Status { get; set; }
 
     [InverseProperty("Image")]
-    public virtual ICollection<ProductVariantImage> ProductVariantImages { get; set; } = new List<ProductVariantImage>();
+    public virtual ICollection<BrandBanner> BrandBanners { get; set; } = new List<BrandBanner>();
+
+    [InverseProperty("Image")]
+    public virtual ICollection<ProductDetailImage> ProductDetailImages { get; set; } = new List<ProductDetailImage>();
+
+    [InverseProperty("Image")]
+    public virtual ICollection<ProductDetail> ProductDetails { get; set; } = new List<ProductDetail>();
 }

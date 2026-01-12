@@ -56,14 +56,16 @@
                 class="flex items-center gap-3"
               >
                 <img
-                  :src="item.imageUrl || '/placeholder-shoe.jpg'"
+                  :src="getItemImage(item)"
                   :alt="item.productName"
                   class="w-16 h-16 object-cover rounded"
                   @error="handleImageError"
                 />
                 <div class="flex-1 min-w-0">
+                  <p class="text-xs font-semibold text-blue-600 mb-1">ID: {{ item.productDetailId }}</p>
                   <p class="font-medium truncate">{{ item.productName }}</p>
                   <p class="text-sm text-gray-600">Số lượng: {{ item.quantity }}</p>
+                  <p v-if="item.size || item.color" class="text-sm text-gray-600">{{ item.size }} / {{ item.color }}</p>
                 </div>
                 <div class="text-right">
                   <p class="font-semibold">{{ formatPrice(item.finalPrice || item.price) }}</p>
@@ -176,6 +178,10 @@ onMounted(async () => {
   try {
     const data = await orderApi.getMyOrders()
     orders.value = data.sort((a, b) => new Date(b.createDate) - new Date(a.createDate))
+    // Debug: log first order item to check imageUrl
+    if (orders.value.length > 0 && orders.value[0].items?.length > 0) {
+      console.log('First order item:', orders.value[0].items[0])
+    }
   } catch (error) {
     console.error('Error loading orders:', error)
     toast.value = {
@@ -270,8 +276,38 @@ function formatDate(dateString) {
   })
 }
 
+function getItemImage(item) {
+  // Backend returns ImageUrl (PascalCase), but frontend might receive imageUrl (camelCase)
+  // Try both cases
+  if (item.imageUrl) return item.imageUrl
+  if (item.ImageUrl) return item.ImageUrl
+  
+  if (item.image) {
+    // If image is string, use it; if object, get url
+    return typeof item.image === 'string' ? item.image : (item.image?.url || '')
+  }
+  if (item.Image) {
+    return typeof item.Image === 'string' ? item.Image : (item.Image?.url || '')
+  }
+  
+  if (item.images && Array.isArray(item.images) && item.images.length > 0) {
+    const firstImg = item.images[0]
+    return typeof firstImg === 'string' ? firstImg : (firstImg?.url || '')
+  }
+  if (item.Images && Array.isArray(item.Images) && item.Images.length > 0) {
+    const firstImg = item.Images[0]
+    return typeof firstImg === 'string' ? firstImg : (firstImg?.url || '')
+  }
+  
+  // Debug: log if no image found
+  console.warn('No image found for item:', item)
+  // Return empty string to trigger error handler
+  return ''
+}
+
 function handleImageError(event) {
-  event.target.src = '/placeholder-shoe.jpg'
+  // Use SVG data URI as fallback instead of external file
+  event.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxMCIgZmlsbD0iIzljYTNhZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg=='
 }
 </script>
 

@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Data.Models;
 
 [Table("AccountRole")]
-[Index("AccountId", "RoleId", Name = "UQ_AccountRole", IsUnique = true)]
 public partial class AccountRole
 {
     [Key]
@@ -15,16 +14,16 @@ public partial class AccountRole
     public int Id { get; set; }
 
     [Column("AccountID")]
-    public int AccountId { get; set; }
+    public int? AccountId { get; set; }
 
     [Column("RoleID")]
-    public int RoleId { get; set; }
+    public int? RoleId { get; set; }
 
     [ForeignKey("AccountId")]
     [InverseProperty("AccountRoles")]
-    public virtual Account Account { get; set; } = null!;
+    public virtual Account? Account { get; set; }
 
     [ForeignKey("RoleId")]
     [InverseProperty("AccountRoles")]
-    public virtual Role Role { get; set; } = null!;
+    public virtual Role? Role { get; set; }
 }

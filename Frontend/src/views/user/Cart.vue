@@ -25,6 +25,7 @@
               <div class="flex justify-between items-start mb-2">
                 <div>
                   <h3 class="text-lg font-bold text-gray-900 mb-1">{{ item.name }}</h3>
+                  <p class="text-sm font-semibold text-gray-600 mb-1">ID: {{ item.id }}</p>
                   <div class="flex flex-col space-y-1 text-sm text-gray-500 mb-2">
                     <p>Danh mục: {{ getCategoryName(item) }}</p>
                     <p>Hãng: {{ getBrandName(item) }}</p>
