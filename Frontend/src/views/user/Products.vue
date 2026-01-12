@@ -19,17 +19,28 @@
               <h3 class="font-bold text-gray-900 mb-4">Danh mục</h3>
               <div class="space-y-2">
                 <button
-                  v-for="category in categories"
-                  :key="category"
-                  @click="selectedCategory = category"
+                  @click="selectedCategory = 'All'"
                   :class="[
                     'w-full text-left px-4 py-2 rounded-lg transition-all duration-300',
-                    selectedCategory === category
+                    selectedCategory === 'All'
                       ? 'bg-primary-500 text-white'
                       : 'hover:bg-gray-100 text-gray-700'
                   ]"
                 >
-                  {{ category }}
+                  Tất cả
+                </button>
+                <button
+                  v-for="category in categories"
+                  :key="category.id"
+                  @click="selectedCategory = category.name"
+                  :class="[
+                    'w-full text-left px-4 py-2 rounded-lg transition-all duration-300',
+                    selectedCategory === category.name
+                      ? 'bg-primary-500 text-white'
+                      : 'hover:bg-gray-100 text-gray-700'
+                  ]"
+                >
+                  {{ category.name }}
                 </button>
               </div>
             </div>
@@ -56,27 +67,6 @@
               </div>
             </div>
 
-            <div class="pt-6 border-t">
-              <h3 class="font-bold text-gray-900 mb-4">Đánh giá</h3>
-              <div class="space-y-2">
-                <button
-                  v-for="rating in [5, 4, 3]"
-                  :key="rating"
-                  @click="selectedRating = rating"
-                  :class="[
-                    'w-full flex items-center space-x-2 px-4 py-2 rounded-lg transition-all',
-                    selectedRating === rating ? 'bg-primary-50 text-primary-600' : 'hover:bg-gray-100'
-                  ]"
-                >
-                  <div class="flex">
-                    <svg v-for="i in rating" :key="i" class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  </div>
-                  <span class="text-sm">& trở lên</span>
-                </button>
-              </div>
-            </div>
 
             <button
               @click="resetFilters"
@@ -98,69 +88,27 @@
               <option value="default">Mặc định</option>
               <option value="price-asc">Giá: Thấp đến cao</option>
               <option value="price-desc">Giá: Cao đến thấp</option>
-              <option value="rating">Đánh giá cao nhất</option>
               <option value="newest">Mới nhất</option>
             </select>
           </div>
 
           <!-- Loading Spinner -->
-          <LoadingSpinner :show="productStore.loading" message="Đang tải sản phẩm..." />
+          <LoadingSpinner :show="loading" message="Đang tải sản phẩm..." />
 
           <!-- Products Grid -->
-          <div v-if="!productStore.loading" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-            <div
+          <div v-if="!loading" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+            <ProductCard
               v-for="(product, index) in sortedProducts"
               :key="product.id"
-              class="group animate-fade-in-up"
+              :product="product"
+              @quick-view="addToCart"
+              class="animate-fade-in-up"
               :style="{ animationDelay: `${index * 0.05}s` }"
-            >
-              <router-link :to="`/products/${product.id}`">
-                <div class="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-                  <div class="relative overflow-hidden bg-gray-100 aspect-square">
-                    <img
-                      :src="product.image"
-                      :alt="product.name"
-                      class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-                    />
-                    <div class="absolute top-4 right-4 bg-primary-500 text-white px-3 py-1 rounded-full text-sm font-bold">
-                      New
-                    </div>
-                  </div>
-                  <div class="p-6">
-                    <div class="flex items-center justify-between mb-2">
-                      <span class="text-sm text-primary-600 font-semibold">{{ product.category }}</span>
-                      <div class="flex items-center space-x-1">
-                        <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                        </svg>
-                        <span class="text-sm text-gray-600">{{ product.rating }}</span>
-                      </div>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">
-                      {{ product.name }}
-                    </h3>
-                    <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ product.description }}</p>
-                    <div class="flex items-center justify-between">
-                      <span class="text-2xl font-bold text-primary-600">
-                        {{ formatPrice(product.price) }}
-                      </span>
-                      <button
-                        @click.prevent="addToCart(product)"
-                        class="bg-primary-500 text-white p-2 rounded-lg hover:bg-primary-600 transition-colors transform hover:scale-110"
-                      >
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </router-link>
-            </div>
+            />
           </div>
 
           <!-- Empty State -->
-          <div v-if="!productStore.loading && filteredProducts.length === 0" class="text-center py-12">
+          <div v-if="!loading && filteredProducts.length === 0" class="text-center py-12">
             <svg class="w-24 h-24 mx-auto text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
             </svg>
@@ -176,6 +124,15 @@
 
     <Footer />
 
+    <!-- Quick View Modal -->
+    <QuickViewModal
+      :show="showQuickView"
+      :product="selectedProduct"
+      @close="showQuickView = false"
+      @add-to-cart="handleAddToCart"
+      @error="(msg) => { toast.message = msg; toast.type = 'error'; toast.show = true; }"
+    />
+
     <Toast
       :show="toast.show"
       :message="toast.message"
@@ -186,21 +143,26 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, reactive, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useProductStore } from '../../stores/products'
 import { useCartStore } from '../../stores/cart'
+import { useProductDiscount } from '../../composables/useProductDiscount'
+import { productApi, categoryApi, productDetailApi, handleApiError } from '../../services/api'
 import Navbar from '../../components/user/Navbar.vue'
 import Footer from '../../components/user/Footer.vue'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import Toast from '../../components/common/Toast.vue'
+import ProductCard from '../../components/user/ProductCard.vue'
+import QuickViewModal from '../../components/common/QuickViewModal.vue'
 
 const route = useRoute()
 const productStore = useProductStore()
 const cartStore = useCartStore()
+const { fetchDiscounts, enrichProductWithDiscount } = useProductDiscount()
 
 const selectedCategory = ref('All')
-const selectedRating = ref(0)
+const selectedBrand = ref('')
 const sortBy = ref('default')
 const priceRange = reactive({ min: 0, max: 10000000 })
 
@@ -210,15 +172,99 @@ const toast = reactive({
   type: 'success'
 })
 
-const categories = computed(() => productStore.categories)
+// Data
+const products = ref([])
+const categories = ref([])
+const productDetails = ref([])
+const loading = ref(false)
+const transformedProducts = ref([])
+const selectedProduct = ref(null)
+const showQuickView = ref(false)
+
+// Transform Product + ProductDetails into display format
+const transformProductForDisplay = (product, allProductDetails, allCategories) => {
+  // Get all variants for this product
+  const variants = allProductDetails.filter(pd => pd.productId === product.id)
+  
+  if (variants.length === 0) {
+    return null // Skip products without variants
+  }
+
+  // Get the first variant with images for display
+  const displayVariant = variants.find(v => 
+    (v.images && v.images.length > 0) || v.imageUrl
+  ) || variants[0]
+  
+  // Get category name
+  const category = allCategories.find(c => c.id === product.categoryId)
+  
+  // Get price range - sử dụng finalPrice từ backend (đã tính discount)
+  const prices = variants.map(v => v.finalPrice || v.price || 0).filter(p => p > 0)
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 0
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0
+  
+  // Lấy discount từ variant đầu tiên có discount (backend đã tính sẵn)
+  const variantWithDiscount = variants.find(v => v.discountActive)
+  const discountInfo = variantWithDiscount ? {
+    discountType: variantWithDiscount.discountType,
+    discountValue: variantWithDiscount.discountValue,
+    discountActive: variantWithDiscount.discountActive
+  } : null
+  
+  return {
+    id: product.id,
+    name: product.name,
+    description: product.description,
+    brand: product.brand,
+    code: product.code,
+    category: category?.name || 'Uncategorized',
+    categoryId: product.categoryId,
+    status: product.status,
+    isActive: product.isActive,
+    // From variant - sử dụng finalPrice từ backend
+    price: displayVariant.finalPrice || displayVariant.price || minPrice || 0,
+    image: displayVariant.images?.[0]?.url || displayVariant.imageUrl || '/placeholder-shoe.jpg',
+    images: displayVariant.images || (displayVariant.imageUrl ? [{ url: displayVariant.imageUrl }] : []),
+    // All variants for this product
+    variants: variants.map(v => ({
+      id: v.id,
+      price: v.price, // Giá gốc
+      finalPrice: v.finalPrice || v.price, // Giá sau discount (từ backend)
+      quantity: v.quantity,
+      colorName: v.colorName,
+      sizeName: v.sizeName,
+      colorId: v.colorId,
+      sizeId: v.sizeId,
+      imageUrl: v.imageUrl,
+      images: v.images || [],
+      discountType: v.discountType, // Từ backend
+      discountValue: v.discountValue, // Từ backend
+      discountActive: v.discountActive || false // Từ backend
+    })),
+    // Additional info
+    minPrice: minPrice,
+    maxPrice: maxPrice,
+    hasMultiplePrices: new Set(variants.map(v => v.finalPrice || v.price)).size > 1,
+    totalQuantity: variants.reduce((sum, v) => sum + (v.quantity || 0), 0),
+    // For sorting/filtering
+    createDate: product.createDate,
+    // New product flag - based on Status="New"
+    isNew: product.status === 'New',
+    discountInfo: discountInfo
+  }
+}
 
 const filteredProducts = computed(() => {
-  return productStore.products.filter(product => {
-    const matchCategory = selectedCategory.value === 'All' || product.category === selectedCategory.value
-    const matchRating = selectedRating.value === 0 || product.rating >= selectedRating.value
-    const matchPrice = product.price >= priceRange.min && (priceRange.max === 0 || product.price <= priceRange.max)
-    return matchCategory && matchRating && matchPrice
-  })
+  return transformedProducts.value
+    .filter(product => product.isActive) // Only show active products
+    .filter(product => {
+      const matchCategory = selectedCategory.value === 'All' || product.category === selectedCategory.value
+      const matchBrand = !selectedBrand.value || product.brand === selectedBrand.value
+      const productPrice = product.price || product.minPrice || 0
+      const matchPrice = productPrice >= priceRange.min && (priceRange.max === 0 || productPrice <= priceRange.max)
+      return matchCategory && matchBrand && matchPrice
+    })
+    .map(product => enrichProductWithDiscount(product)) // Add discount info
 })
 
 const sortedProducts = computed(() => {
@@ -226,49 +272,173 @@ const sortedProducts = computed(() => {
   
   switch (sortBy.value) {
     case 'price-asc':
-      return products.sort((a, b) => a.price - b.price)
+      return products.sort((a, b) => (a.discountedPrice || a.price || a.minPrice || 0) - (b.discountedPrice || b.price || b.minPrice || 0))
     case 'price-desc':
-      return products.sort((a, b) => b.price - a.price)
-    case 'rating':
-      return products.sort((a, b) => b.rating - a.rating)
+      return products.sort((a, b) => (b.discountedPrice || b.price || b.minPrice || 0) - (a.discountedPrice || a.price || a.minPrice || 0))
     case 'newest':
-      return products.reverse()
+      return products.sort((a, b) => new Date(b.createDate || 0) - new Date(a.createDate || 0))
     default:
       return products
   }
 })
 
 function formatPrice(price) {
+  if (!price && price !== 0) return 'Liên hệ'
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND'
   }).format(price)
 }
 
+function formatCurrency(amount) {
+  if (!amount) return '0 VNĐ'
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0
+  }).format(amount)
+}
+
 function resetFilters() {
   selectedCategory.value = 'All'
-  selectedRating.value = 0
+  selectedBrand.value = ''
   sortBy.value = 'default'
   priceRange.min = 0
   priceRange.max = 10000000
 }
 
 function addToCart(product) {
-  const defaultSize = product.sizes[0]
-  cartStore.addToCart(product, defaultSize)
+  // Mở Quick View Modal
+  selectedProduct.value = product
+  showQuickView.value = true
+}
+
+async function handleAddToCart({ product, size, color, quantity }) {
+  // Find the matching variant
+  const variant = product.variants?.find(v => 
+    v.sizeName === size && v.colorName === color
+  )
   
-  toast.message = `Đã thêm ${product.name} vào giỏ hàng`
-  toast.type = 'success'
-  toast.show = true
+  if (!variant) {
+    toast.message = 'Không tìm thấy biến thể sản phẩm'
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  // Validate stock
+  const stock = variant.quantity || 0
+  if (stock === 0) {
+    toast.message = 'Sản phẩm đã hết hàng'
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  if (quantity > stock) {
+    toast.message = `Chỉ còn ${stock} sản phẩm trong kho`
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  // Check if adding this quantity would exceed stock
+  const existingCartItem = cartStore.items.find(item => 
+    item.id === product.id && 
+    item.size === size && 
+    item.color === color
+  )
+  const totalQuantity = (existingCartItem?.quantity || 0) + quantity
+  if (totalQuantity > stock) {
+    toast.message = `Chỉ còn ${stock} sản phẩm trong kho. Bạn đã có ${existingCartItem?.quantity || 0} sản phẩm trong giỏ hàng.`
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  if (!variant?.id) {
+    toast.message = 'Không tìm thấy thông tin sản phẩm'
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  try {
+    await cartStore.addToCart(variant.id, quantity)
+    toast.message = `Đã thêm ${quantity}x ${product.name} (Size ${size}, ${color}) vào giỏ hàng`
+    toast.type = 'success'
+    toast.show = true
+  } catch (error) {
+    toast.message = error.message || 'Không thể thêm sản phẩm vào giỏ hàng'
+    toast.type = 'error'
+    toast.show = true
+  }
+}
+
+async function fetchProductsData() {
+  loading.value = true
+  try {
+    const [productsData, categoriesData, productDetailsData] = await Promise.all([
+      productApi.getAll().catch(err => {
+        console.error('Error fetching products:', err)
+        return []
+      }),
+      categoryApi.getAll().catch(err => {
+        console.error('Error fetching categories:', err)
+        return []
+      }),
+      productDetailApi.getAll().catch(err => {
+        console.error('Error fetching product details:', err)
+        return []
+      })
+    ])
+
+    products.value = productsData.filter(p => p.isActive)
+    categories.value = categoriesData.filter(c => c.status === 'Active')
+    productDetails.value = productDetailsData
+
+    // Transform products
+    transformedProducts.value = products.value
+      .map(product => transformProductForDisplay(product, productDetails.value, categories.value))
+      .filter(p => p !== null) // Remove products without variants
+  } catch (error) {
+    console.error('Error fetching products data:', error)
+    toast.message = 'Không thể tải dữ liệu sản phẩm'
+    toast.type = 'error'
+    toast.show = true
+  } finally {
+    loading.value = false
+  }
+}
+
+// Function to update filters from route query
+function updateFiltersFromRoute() {
+  if (route.query.category) {
+    selectedCategory.value = route.query.category
+  } else {
+    selectedCategory.value = 'All'
+  }
+  
+  if (route.query.brand) {
+    selectedBrand.value = route.query.brand
+  } else {
+    selectedBrand.value = ''
+  }
 }
 
 onMounted(async () => {
-  await productStore.fetchProducts()
+  await Promise.all([
+    fetchProductsData(),
+    fetchDiscounts()
+  ])
   
-  // Check for category from query params
-  if (route.query.category) {
-    selectedCategory.value = route.query.category
-  }
+  // Check for category and brand from query params
+  updateFiltersFromRoute()
 })
+
+// Watch route query params for changes
+watch(() => route.query, () => {
+  updateFiltersFromRoute()
+}, { deep: true })
 </script>
 

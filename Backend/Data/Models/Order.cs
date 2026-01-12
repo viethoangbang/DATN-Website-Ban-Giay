@@ -1,56 +1,79 @@
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Data.Models
+namespace Data.Models;
+
+[Table("Order")]
+[Index("CreateDate", Name = "IX_Order_CreateDate")]
+[Index("CustomerId", Name = "IX_Order_CustomerID")]
+[Index("Status", Name = "IX_Order_Status")]
+[Index("Code", Name = "UQ_Order_Code", IsUnique = true)]
+public partial class Order
 {
-    [Table("orders")]
-    public class Order
-    {
-        [Key]
-        [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+    [Key]
+    [Column("ID")]
+    public int Id { get; set; }
 
-        [Column("discount_id")]
-        public string? DiscountId { get; set; }
+    [StringLength(100)]
+    [Unicode(false)]
+    public string Code { get; set; } = null!;
 
-        [Column("order_date")]
-        public DateTime OrderDate { get; set; } = DateTime.UtcNow;
+    [Column("CustomerID")]
+    public int CustomerId { get; set; }
 
-        [Required]
-        [Column("total_amount", TypeName = "decimal(18,2)")]
-        public decimal TotalAmount { get; set; }
+    [StringLength(100)]
+    public string ReceiverName { get; set; } = null!;
 
-        [Required]
-        [Column("status")]
-        [MaxLength(50)]
-        public string Status { get; set; } = "pending"; // pending, processing, shipped, delivered, cancelled
+    [StringLength(30)]
+    [Unicode(false)]
+    public string ReceiverPhone { get; set; } = null!;
 
-        [Column("payment_method")]
-        [MaxLength(50)]
-        public string? PaymentMethod { get; set; }
+    [StringLength(500)]
+    public string DeliveryAddress { get; set; } = null!;
 
-        [Column("shipping_address")]
-        [MaxLength(500)]
-        public string? ShippingAddress { get; set; }
+    [StringLength(1000)]
+    public string? Note { get; set; }
 
-        [Column("note")]
-        [MaxLength(1000)]
-        public string? Note { get; set; }
+    [StringLength(50)]
+    [Unicode(false)]
+    public string Status { get; set; } = null!;
 
-        [Required]
-        [Column("user_id")]
-        public string UserId { get; set; } = string.Empty;
+    [StringLength(50)]
+    [Unicode(false)]
+    public string PaymentMethod { get; set; } = null!;
 
-        // Navigation properties
-        [ForeignKey("UserId")]
-        public virtual User? User { get; set; }
+    [StringLength(50)]
+    [Unicode(false)]
+    public string PaymentStatus { get; set; } = null!;
 
-        [ForeignKey("DiscountId")]
-        public virtual Discount? Discount { get; set; }
+    [Column(TypeName = "decimal(18, 2)")]
+    public decimal SubTotal { get; set; }
 
-        public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-        public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
-        public virtual ICollection<Shipment> Shipments { get; set; } = new List<Shipment>();
-    }
+    [Column(TypeName = "decimal(18, 2)")]
+    public decimal ShippingFee { get; set; }
+
+    [Column(TypeName = "decimal(18, 2)")]
+    public decimal Total { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime CreateDate { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? UpdateDate { get; set; }
+
+    [Column(TypeName = "datetime")]
+    public DateTime? CompletedDate { get; set; }
+
+    [ForeignKey("CustomerId")]
+    [InverseProperty("Orders")]
+    public virtual Account Customer { get; set; } = null!;
+
+    [InverseProperty("Order")]
+    public virtual ICollection<OrderDetail> OrderDetails { get; set; } = new List<OrderDetail>();
+
+    [InverseProperty("Order")]
+    public virtual ICollection<OrderStatusHistory> OrderStatusHistories { get; set; } = new List<OrderStatusHistory>();
 }
-

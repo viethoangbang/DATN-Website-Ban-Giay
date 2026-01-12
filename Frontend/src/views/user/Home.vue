@@ -56,7 +56,7 @@
             <!-- Stats -->
             <div class="grid grid-cols-3 gap-6 pt-4">
               <div class="animate-fade-in-up" style="animation-delay: 0.2s;">
-                <div class="text-4xl font-black text-gray-900">500+</div>
+                <div class="text-4xl font-black text-gray-900">{{ transformedProducts.length }}+</div>
                 <div class="text-gray-600 text-sm font-medium">Sản phẩm</div>
               </div>
               <div class="animate-fade-in-up" style="animation-delay: 0.3s;">
@@ -78,13 +78,41 @@
                 <div class="w-full h-full bg-gradient-to-br from-orange-100 to-primary-100 rounded-full opacity-60"></div>
               </div>
               
-              <!-- Main Shoe - Container với size cố định -->
-              <div class="absolute inset-0 flex items-center justify-center p-1">
+              <!-- Hero Image Carousel -->
+              <div class="absolute inset-0 flex items-center justify-center p-1 overflow-hidden">
+                <!-- Fallback image if no hero images -->
                 <img
+                  v-if="heroImages.length === 0"
                   src="../../assets/giaybanner.png"
                   alt="Featured Shoe"
                   class="w-full h-full object-contain transform hover:scale-110 transition-transform duration-700 drop-shadow-2xl animate-float"
+                  @error="handleHeroImageError"
                 />
+                <!-- Carousel with multiple images -->
+                <TransitionGroup v-else name="hero-slide" tag="div" class="relative w-full h-full">
+                  <img
+                    v-for="(heroImage, index) in heroImages"
+                    :key="heroImage.id"
+                    v-show="currentHeroIndex === index"
+                    :src="heroImage.url"
+                    :alt="`Hero Image ${index + 1}`"
+                    class="absolute inset-0 w-full h-full object-contain transform hover:scale-110 transition-transform duration-700 drop-shadow-2xl animate-float"
+                    @error="handleHeroImageError"
+                  />
+                </TransitionGroup>
+                <!-- Navigation Dots -->
+                <div v-if="heroImages.length > 1" class="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
+                  <button
+                    v-for="(img, index) in heroImages"
+                    :key="img.id"
+                    @click="currentHeroIndex = index"
+                    :class="[
+                      'w-2 h-2 rounded-full transition-all duration-300',
+                      currentHeroIndex === index ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/75'
+                    ]"
+                    :title="`Slide ${index + 1}`"
+                  ></button>
+                </div>
               </div>
               
               <!-- Floating Elements -->
@@ -107,7 +135,7 @@
                   <div class="text-2xl">🔥</div>
                   <div>
                     <div class="text-xs text-gray-600 whitespace-nowrap">Hot Sale</div>
-                    <div class="text-lg font-black bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">-30%</div>
+                    <!-- <div class="text-lg font-black bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">-30%</div> -->
                   </div>
                 </div>
               </div>
@@ -122,148 +150,10 @@
     </section>
 
     <!-- Loading Spinner -->
-    <LoadingSpinner :show="productStore.loading" message="Đang tải sản phẩm..." />
+    <LoadingSpinner :show="loading" message="Đang tải sản phẩm..." />
 
-    <!-- Categories Section -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div class="text-center mb-12 animate-fade-in-up">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          Danh Mục Sản Phẩm
-        </h2>
-        <p class="text-gray-600 text-lg">Tìm kiếm phong cách phù hợp với bạn</p>
-      </div>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-        <div
-          v-for="(category, index) in categories"
-          :key="category"
-          class="group cursor-pointer animate-fade-in-up"
-          :style="{ animationDelay: `${index * 0.1}s` }"
-          @click="filterByCategory(category)"
-        >
-          <div class="bg-white rounded-xl shadow-md p-6 text-center transition-all duration-300 hover:shadow-xl hover:scale-105 group-hover:bg-primary-500">
-            <div class="w-16 h-16 bg-primary-100 group-hover:bg-white rounded-full flex items-center justify-center mx-auto mb-4 transition-colors">
-              <svg class="w-8 h-8 text-primary-500 transition-transform group-hover:scale-110" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3zM16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-              </svg>
-            </div>
-            <h3 class="font-bold text-gray-900 group-hover:text-white transition-colors">{{ category }}</h3>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Flash Sale Banner -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div class="bg-gradient-to-r from-red-500 via-pink-500 to-purple-500 rounded-2xl overflow-hidden shadow-xl animate-fade-in-up">
-        <div class="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between text-white">
-          <div class="mb-6 md:mb-0">
-            <div class="flex items-center space-x-2 mb-2">
-              <svg class="w-6 h-6 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
-              </svg>
-              <span class="text-sm font-bold uppercase">Flash Sale</span>
-            </div>
-            <h3 class="text-3xl md:text-4xl font-bold mb-2">Giảm đến 50%</h3>
-            <p class="text-white/90 mb-4">Khuyến mãi có hạn - Nhanh tay đặt hàng!</p>
-            <div class="flex items-center space-x-4">
-              <div class="text-center">
-                <div class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                  <span class="text-2xl font-bold">12</span>
-                  <div class="text-xs">Giờ</div>
-                </div>
-              </div>
-              <span class="text-2xl">:</span>
-              <div class="text-center">
-                <div class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                  <span class="text-2xl font-bold">34</span>
-                  <div class="text-xs">Phút</div>
-                </div>
-              </div>
-              <span class="text-2xl">:</span>
-              <div class="text-center">
-                <div class="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-lg">
-                  <span class="text-2xl font-bold">56</span>
-                  <div class="text-xs">Giây</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div>
-            <router-link to="/products" class="btn-primary bg-white text-purple-600 hover:bg-gray-100 px-8 py-4 text-lg">
-              Mua ngay
-            </router-link>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Hot Deals Section -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div class="flex justify-between items-center mb-12">
-        <div class="animate-fade-in-up">
-          <div class="flex items-center space-x-2 mb-2">
-            <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd" />
-            </svg>
-            <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
-              Deals Hấp Dẫn
-            </h2>
-          </div>
-          <p class="text-gray-600">Giá tốt nhất - Không thể bỏ lỡ!</p>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
-          v-for="(product, index) in hotDeals"
-          :key="product.id"
-          class="group animate-fade-in-up bg-gradient-to-br from-red-50 to-orange-50 rounded-xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-2"
-          :style="{ animationDelay: `${index * 0.1}s` }"
-        >
-          <div class="relative">
-            <div class="aspect-square overflow-hidden">
-              <img
-                :src="product.image"
-                :alt="product.name"
-                class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-              />
-            </div>
-            <div class="absolute top-4 left-4 bg-red-500 text-white px-4 py-2 rounded-full text-sm font-bold shadow-lg animate-pulse">
-              -{{ product.discount }}%
-            </div>
-            <button class="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg hover:scale-110">
-              <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
-              </svg>
-            </button>
-          </div>
-          <div class="p-6">
-            <span class="text-sm text-primary-600 font-semibold">{{ product.category }}</span>
-            <h3 class="text-lg font-bold text-gray-900 mb-2 mt-1 group-hover:text-primary-600 transition-colors">
-              {{ product.name }}
-            </h3>
-            <div class="flex items-center space-x-2 mb-4">
-              <span class="text-2xl font-bold text-red-600">
-                {{ formatPrice(product.salePrice) }}
-              </span>
-              <span class="text-gray-400 line-through text-sm">
-                {{ formatPrice(product.price) }}
-              </span>
-            </div>
-            <button
-              @click="addToCart(product)"
-              class="w-full bg-primary-500 text-white py-3 rounded-lg font-semibold hover:bg-primary-600 transition-colors flex items-center justify-center space-x-2"
-            >
-              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span>Thêm vào giỏ</span>
-            </button>
-          </div>
-        </div>
-      </div>
-    </section>
+    
+    
 
     <!-- Trending Products -->
     <section class="bg-gradient-to-b from-gray-50 to-white py-16">
@@ -278,7 +168,19 @@
           <p class="text-gray-600 text-lg">Những mẫu giày được săn đón nhiều nhất</p>
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+        <div v-if="loading" class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <div v-for="i in 8" :key="i" class="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+            <div class="aspect-square bg-gray-200"></div>
+            <div class="p-4 space-y-2">
+              <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+              <div class="h-6 bg-gray-200 rounded w-1/2"></div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="trendingProducts.length === 0" class="text-center py-12 text-gray-500">
+          <p>Chưa có sản phẩm xu hướng</p>
+        </div>
+        <div v-else class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
           <div
             v-for="(product, index) in trendingProducts"
             :key="product.id"
@@ -290,31 +192,36 @@
                 <img
                   :src="product.image"
                   :alt="product.name"
+                  @error="handleImageError"
                   class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
+                  loading="lazy"
                 />
-                <div class="absolute top-2 right-2 bg-yellow-400 text-gray-900 px-2 py-1 rounded-full text-xs font-bold flex items-center space-x-1">
-                  <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span>Hot</span>
+                <div class="absolute top-2 left-2 z-10 flex flex-col space-y-1">
+                  <span v-if="product.isNew" class="bg-primary-500 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow-lg">
+                    MỚI
+                  </span>
+                  <span v-if="product.discountInfo" class="bg-red-500 text-white px-2 py-0.5 rounded-full text-xs font-bold shadow-lg">
+                    {{ product.discountInfo.discountType === 'Percentage' 
+                      ? `-${product.discountInfo.discountValue}%` 
+                      : `-${formatCurrency(product.discountInfo.discountValue)}` }}
+                  </span>
                 </div>
               </div>
               <div class="p-4">
                 <h3 class="font-bold text-gray-900 text-sm mb-1 group-hover:text-primary-600 transition-colors line-clamp-1">
                   {{ product.name }}
                 </h3>
-                <div class="flex items-center justify-between">
-                  <span class="text-lg font-bold text-primary-600">
-                    {{ formatPrice(product.price) }}
-                  </span>
-                  <button
-                    @click="addToCart(product)"
-                    class="p-2 bg-primary-100 text-primary-600 rounded-lg hover:bg-primary-500 hover:text-white transition-colors"
-                  >
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                  </button>
+                <div class="space-y-1">
+                  <div v-if="product.discountInfo && product.discountedPrice < product.price" class="flex items-center space-x-2">
+                    <span class="text-sm text-gray-400 line-through">
+                      {{ formatPrice(product.price) }}
+                    </span>
+                  </div>
+                  <div class="flex items-baseline space-x-2">
+                    <span class="text-lg font-bold text-primary-600">
+                      {{ formatPrice(product.discountedPrice || product.price) }}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -332,17 +239,17 @@
       </div>
     </section>
 
-    <!-- New Arrivals -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <!-- New Products Section -->
+    <section v-if="transformedNewProducts.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
       <div class="flex justify-between items-center mb-12">
         <div class="animate-fade-in-up">
           <div class="flex items-center space-x-2 mb-2">
-            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-bold">Mới</span>
+            <span class="px-3 py-1 bg-primary-500 text-white rounded-full text-sm font-bold">MỚI</span>
             <h2 class="text-3xl md:text-4xl font-bold text-gray-900">
-              Hàng Mới Về
+              Sản Phẩm Mới
             </h2>
           </div>
-          <p class="text-gray-600">Cập nhật bộ sưu tập mới nhất</p>
+          <p class="text-gray-600">Bộ sưu tập mới nhất được quản lý bởi admin</p>
         </div>
         <router-link
           to="/products"
@@ -355,52 +262,60 @@
         </router-link>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div
-          v-for="(product, index) in newArrivals"
-          :key="product.id"
-          class="group animate-fade-in-up"
-          :style="{ animationDelay: `${index * 0.1}s` }"
-        >
-          <div class="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-2">
-            <div class="relative overflow-hidden bg-gradient-to-br from-green-50 to-blue-50 aspect-square">
-              <img
-                :src="product.image"
-                :alt="product.name"
-                class="w-full h-full object-cover transform group-hover:scale-110 group-hover:rotate-2 transition-all duration-500"
-              />
-              <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-xs font-bold">
-                New Arrival
-              </div>
-            </div>
-            <div class="p-6">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-primary-600 font-semibold">{{ product.category }}</span>
-                <div class="flex items-center space-x-1">
-                  <svg class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                  </svg>
-                  <span class="text-sm text-gray-600">{{ product.rating }}</span>
-                </div>
-              </div>
-              <h3 class="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors line-clamp-2">
-                {{ product.name }}
-              </h3>
-              <div class="flex items-center justify-between mt-4">
-                <span class="text-2xl font-bold text-primary-600">
-                  {{ formatPrice(product.price) }}
-                </span>
-                <button
-                  @click="addToCart(product)"
-                  class="bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors transform hover:scale-110 flex items-center space-x-1"
-                >
-                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+      <div v-if="loading" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div v-for="i in 4" :key="i" class="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+          <div class="aspect-square bg-gray-200"></div>
+          <div class="p-6 space-y-3">
+            <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+            <div class="h-6 bg-gray-200 rounded w-3/4"></div>
+            <div class="h-8 bg-gray-200 rounded w-1/3"></div>
           </div>
+        </div>
+      </div>
+      <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <ProductCard
+          v-for="(product, index) in transformedNewProducts"
+          :key="product.id"
+          :product="product"
+          @quick-view="addToCart"
+          class="animate-fade-in-up"
+          :style="{ animationDelay: `${index * 0.1}s` }"
+        />
+      </div>
+    </section>
+
+    <!-- Brand Sections -->
+    <section v-if="brandSections && brandSections.length > 0" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-16">
+      <div
+        v-for="(section, sectionIndex) in brandSections"
+        :key="section.brand"
+        class="animate-fade-in-up"
+        :style="{ animationDelay: `${sectionIndex * 0.1}s` }"
+      >
+        <!-- Brand Header -->
+        <div class="text-center mb-8">
+          <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{{ section.brand }}</h2>
+          <p class="text-gray-600">Khám phá bộ sưu tập {{ section.brand }}</p>
+        </div>
+
+        <!-- Banner Carousel -->
+        <div v-if="section.banners && section.banners.length > 0" class="mb-12">
+          <BrandCarousel :banners="section.banners" :brand="section.brand" />
+        </div>
+
+        <!-- Products Grid -->
+        <div v-if="section.products && section.products.length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <ProductCard
+            v-for="(product, index) in section.products"
+            :key="product.id"
+            :product="transformBrandProduct(product)"
+            @quick-view="addToCart"
+            class="animate-fade-in-up"
+            :style="{ animationDelay: `${index * 0.05}s` }"
+          />
+        </div>
+        <div v-else class="text-center py-12 text-gray-500">
+          <p>Chưa có sản phẩm cho thương hiệu {{ section.brand }}</p>
         </div>
       </div>
     </section>
@@ -453,40 +368,7 @@
       </div>
     </section>
 
-    <!-- Testimonials -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-      <div class="text-center mb-12 animate-fade-in-up">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-2">Khách Hàng Nói Gì</h2>
-        <p class="text-gray-600">Đánh giá từ khách hàng thực tế</p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div
-          v-for="(review, index) in testimonials"
-          :key="index"
-          class="bg-white rounded-xl shadow-md p-6 hover:shadow-xl transition-all duration-300 animate-fade-in-up"
-          :style="{ animationDelay: `${index * 0.15}s` }"
-        >
-          <div class="flex items-center mb-4">
-            <div v-for="i in 5" :key="i" class="w-5 h-5">
-              <svg class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            </div>
-          </div>
-          <p class="text-gray-700 mb-6 italic">"{{ review.content }}"</p>
-          <div class="flex items-center space-x-3">
-            <div class="w-12 h-12 bg-primary-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-              {{ review.name.charAt(0) }}
-            </div>
-            <div>
-              <div class="font-bold text-gray-900">{{ review.name }}</div>
-              <div class="text-sm text-gray-600">{{ review.title }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    
 
 
     <!-- Features Section -->
@@ -544,6 +426,7 @@
       :product="selectedProduct"
       @close="showQuickView = false"
       @add-to-cart="handleAddToCart"
+      @error="(msg) => { toast.message = msg; toast.type = 'error'; toast.show = true; }"
     />
 
     <!-- Toast Notification -->
@@ -557,23 +440,65 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+import { ref, computed, onMounted, onUnmounted, reactive, TransitionGroup } from 'vue'
 import { useRouter } from 'vue-router'
-import { useProductStore } from '../../stores/products'
 import { useCartStore } from '../../stores/cart'
+import { useHomePage } from '../../composables/useHomePage'
+import { useProductDiscount } from '../../composables/useProductDiscount'
+import { imageApi } from '../../services/api'
 import Navbar from '../../components/user/Navbar.vue'
 import Footer from '../../components/user/Footer.vue'
 import LoadingSpinner from '../../components/common/LoadingSpinner.vue'
 import Toast from '../../components/common/Toast.vue'
 import QuickViewModal from '../../components/common/QuickViewModal.vue'
+import ProductCard from '../../components/user/ProductCard.vue'
+import BrandCarousel from '../../components/user/BrandCarousel.vue'
 
 const router = useRouter()
-const productStore = useProductStore()
 const cartStore = useCartStore()
+
+// Use discount composable
+const { fetchDiscounts, enrichProductWithDiscount } = useProductDiscount()
+
+// Use composable for home page data
+const {
+  loading,
+  error,
+  transformedProducts,
+  newProducts,
+  brandSections,
+  fetchHomePageData,
+  getHotDeals,
+  getTrendingProducts,
+  getNewArrivals,
+  getActiveCategories,
+  getActiveVouchers,
+  updateCountdown
+} = useHomePage()
+
+// Computed properties
+const hotDeals = computed(() => getHotDeals(3))
+const trendingProducts = computed(() => {
+  const products = getTrendingProducts(8)
+  return products.map(product => enrichProductWithDiscount(product))
+})
+const newArrivals = computed(() => getNewArrivals(4))
+const categories = computed(() => getActiveCategories.value.map(c => c.name || 'Uncategorized'))
+const activeVouchers = computed(() => getActiveVouchers.value)
+const transformedNewProducts = computed(() => {
+  // newProducts is already transformed, just ensure isNew flag is set
+  return newProducts.value.map(product => ({
+    ...product,
+    isNew: true // All products in newProducts are marked as New
+  }))
+})
 
 const newsletterEmail = ref('')
 const showQuickView = ref(false)
 const selectedProduct = ref(null)
+const heroImages = ref([])
+const currentHeroIndex = ref(0)
+let heroCarouselInterval = null
 
 const toast = reactive({
   show: false,
@@ -610,32 +535,25 @@ const testimonials = ref([
   }
 ])
 
-const categories = computed(() => productStore.categories.filter(c => c !== 'All'))
-
-// Hot Deals - 3 sản phẩm giảm giá
-const hotDeals = computed(() => {
-  return productStore.products.slice(0, 3).map((product, index) => ({
-    ...product,
-    discount: [30, 40, 50][index],
-    salePrice: product.price * (1 - [0.3, 0.4, 0.5][index])
-  }))
-})
-
-// Trending - 8 sản phẩm
-const trendingProducts = computed(() => productStore.products.slice(3, 11))
-
-// New Arrivals - 4 sản phẩm
-const newArrivals = computed(() => productStore.products.slice(11, 15))
-
 function formatPrice(price) {
+  if (!price && price !== 0) return 'Liên hệ'
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND'
   }).format(price)
 }
 
-function filterByCategory(category) {
-  router.push({ name: 'Products', query: { category } })
+function formatCurrency(amount) {
+  if (!amount) return '0 VNĐ'
+  return new Intl.NumberFormat('vi-VN', {
+    style: 'currency',
+    currency: 'VND',
+    maximumFractionDigits: 0
+  }).format(amount)
+}
+
+function filterByCategory(categoryName) {
+  router.push({ name: 'Products', query: { category: categoryName } })
 }
 
 function addToCart(product) {
@@ -644,15 +562,66 @@ function addToCart(product) {
   showQuickView.value = true
 }
 
-function handleAddToCart({ product, size, color, quantity }) {
-  // Thêm vào giỏ với thông tin đã chọn
-  for (let i = 0; i < quantity; i++) {
-    cartStore.addToCart(product, size, color)
-  }
+async function handleAddToCart({ product, size, color, quantity }) {
+  // Find the matching variant
+  const variant = product.variants?.find(v => 
+    v.sizeName === size && v.colorName === color
+  )
   
-  toast.message = `Đã thêm ${quantity}x ${product.name} (Size ${size}) vào giỏ hàng`
-  toast.type = 'success'
-  toast.show = true
+  if (!variant) {
+    toast.message = 'Không tìm thấy biến thể sản phẩm'
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  // Validate stock
+  const stock = variant.quantity || 0
+  if (stock === 0) {
+    toast.message = 'Sản phẩm đã hết hàng'
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  if (quantity > stock) {
+    toast.message = `Chỉ còn ${stock} sản phẩm trong kho`
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  // Check if adding this quantity would exceed stock
+  const existingCartItem = cartStore.items.find(item => 
+    item.id === product.id && 
+    item.size === size && 
+    item.color === color
+  )
+  const totalQuantity = (existingCartItem?.quantity || 0) + quantity
+  if (totalQuantity > stock) {
+    toast.message = `Chỉ còn ${stock} sản phẩm trong kho. Bạn đã có ${existingCartItem?.quantity || 0} sản phẩm trong giỏ hàng.`
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  if (!variant?.id) {
+    toast.message = 'Không tìm thấy thông tin sản phẩm'
+    toast.type = 'error'
+    toast.show = true
+    return
+  }
+
+  try {
+    await cartStore.addToCart(variant.id, quantity)
+    toast.message = `Đã thêm ${quantity}x ${product.name} (Size ${size}, ${color}) vào giỏ hàng`
+    toast.type = 'success'
+    toast.show = true
+  } catch (error) {
+    toast.message = error.message || 'Không thể thêm sản phẩm vào giỏ hàng'
+    toast.type = 'error'
+    toast.show = true
+  }
 }
 
 function subscribeNewsletter() {
@@ -664,9 +633,129 @@ function subscribeNewsletter() {
   }
 }
 
+// Handle image errors
+function handleImageError(event) {
+  event.target.src = '/placeholder-shoe.jpg'
+}
+
+function handleHeroImageError(event) {
+  event.target.src = '../../assets/giaybanner.png'
+}
+
+// Fetch hero images
+async function fetchHeroImages() {
+  try {
+    heroImages.value = await imageApi.getHeroImages()
+    if (heroImages.value.length > 0) {
+      startHeroCarousel()
+    }
+  } catch (error) {
+    console.error('Error fetching hero images:', error)
+    // Fallback to default image
+    heroImages.value = []
+  }
+}
+
+// Auto-rotate hero images
+function startHeroCarousel() {
+  if (heroImages.value.length <= 1) return
+  
+  heroCarouselInterval = setInterval(() => {
+    currentHeroIndex.value = (currentHeroIndex.value + 1) % heroImages.value.length
+  }, 5000) // Change every 5 seconds
+}
+
+function stopHeroCarousel() {
+  if (heroCarouselInterval) {
+    clearInterval(heroCarouselInterval)
+    heroCarouselInterval = null
+  }
+}
+
+function transformBrandProduct(product) {
+  // Find product in transformedProducts to get full details
+  const fullProduct = transformedProducts.value.find(p => p.id === product.id)
+  let transformed = null
+  
+  if (fullProduct) {
+    transformed = {
+      ...fullProduct,
+      isNew: product.status === 'New' || fullProduct.isNew
+    }
+  } else {
+    // If not found, return basic product with isNew flag
+    transformed = {
+      ...product,
+      isNew: product.status === 'New',
+      image: product.image || '/placeholder-shoe.jpg',
+      price: product.price || 0,
+      category: 'Uncategorized',
+      variants: [],
+      colors: [],
+      sizes: []
+    }
+  }
+  
+  // Enrich with discount info
+  return enrichProductWithDiscount(transformed)
+}
+
+// Update voucher countdown every second
+let voucherInterval = null
+
 onMounted(async () => {
-  await productStore.fetchProducts()
-  cartStore.loadFromLocalStorage()
+  await Promise.all([
+    fetchHomePageData(),
+    fetchDiscounts(),
+    fetchHeroImages()
+  ])
+  
+  // Update voucher countdowns every second
+  voucherInterval = setInterval(() => {
+    updateCountdown()
+  }, 1000)
+  
+  // Show error toast if data loading failed
+  if (error.value) {
+    toast.message = `Không thể tải dữ liệu: ${error.value}`
+    toast.type = 'error'
+    toast.show = true
+  }
+})
+
+onUnmounted(() => {
+  if (voucherInterval) {
+    clearInterval(voucherInterval)
+  }
+  stopHeroCarousel()
 })
 </script>
+
+<style scoped>
+/* Hero Carousel Slide Animation */
+.hero-slide-enter-active,
+.hero-slide-leave-active {
+  transition: all 0.8s ease-in-out;
+}
+
+.hero-slide-enter-from {
+  opacity: 0;
+  transform: translateY(30px) scale(0.95);
+}
+
+.hero-slide-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.hero-slide-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.hero-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-30px) scale(0.95);
+}
+</style>
 

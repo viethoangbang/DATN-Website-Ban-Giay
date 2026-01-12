@@ -1,0 +1,39 @@
+# Backend (.NET)
+**/bin/
+**/obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+.vs/
+.vscode/
+
+# Frontend (Vue/Node)
+node_modules/
+dist/
+.DS_Store
+*.log
+.vite/
+.cache/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+appsettings.Development.json
+
+# OS
+Thumbs.db
+

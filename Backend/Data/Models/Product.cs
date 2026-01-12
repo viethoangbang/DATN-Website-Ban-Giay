@@ -1,58 +1,59 @@
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Data.Models
+namespace Data.Models;
+
+[Table("Product")]
+[Index("BrandId", Name = "IX_Product_BrandID")]
+[Index("CategoryId", Name = "IX_Product_CategoryID")]
+[Index("Status", Name = "IX_Product_Status")]
+[Index("Code", Name = "UQ_Product_Code", IsUnique = true)]
+public partial class Product
 {
-    [Table("products")]
-    public class Product
-    {
-        [Key]
-        [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+    [Key]
+    [Column("ID")]
+    public int Id { get; set; }
 
-        [Required]
-        [Column("name")]
-        [MaxLength(255)]
-        public string Name { get; set; } = string.Empty;
+    [StringLength(100)]
+    [Unicode(false)]
+    public string Code { get; set; } = null!;
 
-        [Column("description")]
-        [MaxLength(2000)]
-        public string? Description { get; set; }
+    [StringLength(255)]
+    public string Name { get; set; } = null!;
 
-        [Required]
-        [Column("price", TypeName = "decimal(18,2)")]
-        public decimal Price { get; set; }
+    [StringLength(1000)]
+    public string? Description { get; set; }
 
-        [Required]
-        [Column("category_id")]
-        public string CategoryId { get; set; } = string.Empty;
+    [Column("BrandID")]
+    public int BrandId { get; set; }
 
-        [Column("stock_quantity")]
-        public int StockQuantity { get; set; } = 0;
+    [Column("CategoryID")]
+    public int CategoryId { get; set; }
 
-        [Column("image_url")]
-        [MaxLength(500)]
-        public string? ImageUrl { get; set; }
+    [StringLength(50)]
+    [Unicode(false)]
+    public string Status { get; set; } = null!;
 
-        [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Column(TypeName = "datetime")]
+    public DateTime CreateDate { get; set; }
 
-        [Column("updated_at")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    [Column(TypeName = "datetime")]
+    public DateTime? UpdateDate { get; set; }
 
-        [Required]
-        [Column("brand_id")]
-        public string BrandId { get; set; } = string.Empty;
+    [ForeignKey("BrandId")]
+    [InverseProperty("Products")]
+    public virtual Brand Brand { get; set; } = null!;
 
-        // Navigation properties
-        [ForeignKey("CategoryId")]
-        public virtual Category? Category { get; set; }
+    [ForeignKey("CategoryId")]
+    [InverseProperty("Products")]
+    public virtual Category Category { get; set; } = null!;
 
-        [ForeignKey("BrandId")]
-        public virtual Brand? Brand { get; set; }
+    [InverseProperty("Product")]
+    public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
 
-        public virtual ICollection<ProductVariant> ProductVariants { get; set; } = new List<ProductVariant>();
-        public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
-    }
+    [InverseProperty("Product")]
+    public virtual ICollection<Voucher> Vouchers { get; set; } = new List<Voucher>();
 }
-

@@ -1,135 +1,323 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { productApi, categoryApi, colorApi, sizeApi, productDetailApi, imageApi, handleApiError } from '@/services/api'
 
 export const useProductStore = defineStore('products', () => {
+  // State
   const products = ref([])
+  const categories = ref([])
+  const colors = ref([])
+  const sizes = ref([])
   const loading = ref(false)
-  const categories = ref(['All', 'Running', 'Basketball', 'Casual', 'Sports'])
-  
-  // Mock data cho demo
-  const mockProducts = [
-    {
-      id: 1,
-      name: 'Nike Air Max 2024',
-      price: 3500000,
-      image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=500',
-      category: 'Running',
-      description: 'Giày chạy bộ cao cấp với công nghệ đệm khí tiên tiến',
-      sizes: [38, 39, 40, 41, 42, 43],
-      colors: ['Black', 'White', 'Red'],
-      rating: 4.8,
-      reviews: 245
-    },
-    {
-      id: 2,
-      name: 'Adidas Ultraboost',
-      price: 4200000,
-      image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=500',
-      category: 'Running',
-      description: 'Đế boost êm ái, phù hợp chạy marathon',
-      sizes: [38, 39, 40, 41, 42, 43],
-      colors: ['White', 'Black', 'Blue'],
-      rating: 4.9,
-      reviews: 312
-    },
-    {
-      id: 3,
-      name: 'Jordan Retro High',
-      price: 5500000,
-      image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=500',
-      category: 'Basketball',
-      description: 'Phong cách cổ điển, chất lượng vượt trội',
-      sizes: [39, 40, 41, 42, 43, 44],
-      colors: ['Red', 'Black', 'White'],
-      rating: 4.7,
-      reviews: 189
-    },
-    {
-      id: 4,
-      name: 'Puma RS-X',
-      price: 2800000,
-      image: 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=500',
-      category: 'Casual',
-      description: 'Thiết kế retro, thoải mái cả ngày',
-      sizes: [38, 39, 40, 41, 42],
-      colors: ['White', 'Blue', 'Yellow'],
-      rating: 4.5,
-      reviews: 156
-    },
-    {
-      id: 5,
-      name: 'New Balance 574',
-      price: 3200000,
-      image: 'https://images.unsplash.com/photo-1539185441755-769473a23570?w=500',
-      category: 'Casual',
-      description: 'Classic style với sự thoải mái tuyệt đối',
-      sizes: [38, 39, 40, 41, 42, 43],
-      colors: ['Grey', 'Navy', 'Brown'],
-      rating: 4.6,
-      reviews: 203
-    },
-    {
-      id: 6,
-      name: 'Converse Chuck 70',
-      price: 1800000,
-      image: 'https://images.unsplash.com/photo-1607522370275-f14206abe5d3?w=500',
-      category: 'Casual',
-      description: 'Biểu tượng thời trang đường phố',
-      sizes: [36, 37, 38, 39, 40, 41, 42],
-      colors: ['Black', 'White', 'Red'],
-      rating: 4.4,
-      reviews: 421
-    },
-    {
-      id: 7,
-      name: 'Vans Old Skool',
-      price: 1650000,
-      image: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?w=500',
-      category: 'Casual',
-      description: 'Phong cách skate đích thực',
-      sizes: [37, 38, 39, 40, 41, 42],
-      colors: ['Black/White', 'Navy', 'Red'],
-      rating: 4.5,
-      reviews: 367
-    },
-    {
-      id: 8,
-      name: 'Reebok Classic Leather',
-      price: 2100000,
-      image: 'https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=500',
-      category: 'Casual',
-      description: 'Chất liệu da cao cấp, bền bỉ theo thời gian',
-      sizes: [38, 39, 40, 41, 42, 43],
-      colors: ['White', 'Black', 'Brown'],
-      rating: 4.3,
-      reviews: 178
-    }
-  ]
-  
-  async function fetchProducts() {
+  const error = ref(null)
+
+  // Computed
+  const productCount = computed(() => products.value.length)
+  const activeProducts = computed(() => products.value.filter(p => p.isActive))
+
+  // ==================== PRODUCTS ====================
+  const fetchProducts = async () => {
     loading.value = true
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    products.value = mockProducts
-    loading.value = false
+    error.value = null
+    try {
+      products.value = await productApi.getAll()
+    } catch (err) {
+      error.value = handleApiError(err)
+      console.error('Error fetching products:', err)
+    } finally {
+      loading.value = false
+    }
   }
-  
-  function getProductById(id) {
-    return products.value.find(p => p.id === parseInt(id))
+
+  const getProduct = async (id) => {
+    try {
+      return await productApi.getById(id)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
   }
-  
-  function getProductsByCategory(category) {
-    if (category === 'All') return products.value
-    return products.value.filter(p => p.category === category)
+
+  const createProduct = async (productData) => {
+    loading.value = true
+    error.value = null
+    try {
+      const newProduct = await productApi.create(productData)
+      products.value.push(newProduct)
+      return newProduct
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    } finally {
+      loading.value = false
+    }
   }
-  
+
+  const updateProduct = async (id, productData) => {
+    loading.value = true
+    error.value = null
+    try {
+      await productApi.update(id, productData)
+      const index = products.value.findIndex(p => p.id === id)
+      if (index !== -1) {
+        products.value[index] = { ...products.value[index], ...productData }
+      }
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  const deleteProduct = async (id) => {
+    loading.value = true
+    error.value = null
+    try {
+      await productApi.delete(id)
+      products.value = products.value.filter(p => p.id !== id)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  // ==================== CATEGORIES ====================
+  const fetchCategories = async () => {
+    try {
+      categories.value = await categoryApi.getAll()
+    } catch (err) {
+      console.error('Error fetching categories:', err)
+    }
+  }
+
+  const createCategory = async (categoryData) => {
+    try {
+      const newCategory = await categoryApi.create(categoryData)
+      categories.value.push(newCategory)
+      return newCategory
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const updateCategory = async (id, categoryData) => {
+    try {
+      await categoryApi.update(id, categoryData)
+      const index = categories.value.findIndex(c => c.id === id)
+      if (index !== -1) {
+        categories.value[index] = { ...categories.value[index], ...categoryData }
+      }
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const deleteCategory = async (id) => {
+    try {
+      await categoryApi.delete(id)
+      categories.value = categories.value.filter(c => c.id !== id)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  // ==================== COLORS ====================
+  const fetchColors = async () => {
+    try {
+      colors.value = await colorApi.getAll()
+    } catch (err) {
+      console.error('Error fetching colors:', err)
+    }
+  }
+
+  const createColor = async (colorData) => {
+    try {
+      const newColor = await colorApi.create(colorData)
+      colors.value.push(newColor)
+      return newColor
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const updateColor = async (id, colorData) => {
+    try {
+      await colorApi.update(id, colorData)
+      const index = colors.value.findIndex(c => c.id === id)
+      if (index !== -1) {
+        colors.value[index] = { ...colors.value[index], ...colorData }
+      }
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const deleteColor = async (id) => {
+    try {
+      await colorApi.delete(id)
+      colors.value = colors.value.filter(c => c.id !== id)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  // ==================== SIZES ====================
+  const fetchSizes = async () => {
+    try {
+      sizes.value = await sizeApi.getAll()
+    } catch (err) {
+      console.error('Error fetching sizes:', err)
+    }
+  }
+
+  const createSize = async (sizeData) => {
+    try {
+      const newSize = await sizeApi.create(sizeData)
+      sizes.value.push(newSize)
+      return newSize
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const updateSize = async (id, sizeData) => {
+    try {
+      await sizeApi.update(id, sizeData)
+      const index = sizes.value.findIndex(s => s.id === id)
+      if (index !== -1) {
+        sizes.value[index] = { ...sizes.value[index], ...sizeData }
+      }
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const deleteSize = async (id) => {
+    try {
+      await sizeApi.delete(id)
+      sizes.value = sizes.value.filter(s => s.id !== id)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  // ==================== IMAGES ====================
+  const createImage = async (imageData) => {
+    try {
+      return await imageApi.create(imageData)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  // ==================== PRODUCT DETAILS ====================
+  const getProductDetails = async (productId) => {
+    try {
+      return await productDetailApi.getByProductId(productId)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const createProductDetail = async (detailData) => {
+    try {
+      return await productDetailApi.create(detailData)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const updateProductDetail = async (id, detailData) => {
+    try {
+      return await productDetailApi.update(id, detailData)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  const deleteProductDetail = async (id) => {
+    try {
+      await productDetailApi.delete(id)
+    } catch (err) {
+      error.value = handleApiError(err)
+      throw err
+    }
+  }
+
+  // Initialize
+  const initialize = async () => {
+    await Promise.all([
+      fetchProducts(),
+      fetchCategories(),
+      fetchColors(),
+      fetchSizes()
+    ])
+  }
+
   return {
+    // State
     products,
-    loading,
     categories,
+    colors,
+    sizes,
+    loading,
+    error,
+
+    // Computed
+    productCount,
+    activeProducts,
+
+    // Products
     fetchProducts,
-    getProductById,
-    getProductsByCategory
+    getProduct,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+
+    // Categories
+    fetchCategories,
+    createCategory,
+    updateCategory,
+    deleteCategory,
+
+    // Colors
+    fetchColors,
+    createColor,
+    updateColor,
+    deleteColor,
+
+    // Sizes
+    fetchSizes,
+    createSize,
+    updateSize,
+    deleteSize,
+
+    // Images
+    createImage,
+
+    // Product Details
+    getProductDetails,
+    createProductDetail,
+    updateProductDetail,
+    deleteProductDetail,
+
+    // Initialize
+    initialize
   }
 })
-

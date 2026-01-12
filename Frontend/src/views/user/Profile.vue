@@ -8,16 +8,35 @@
         <p class="text-gray-600">Quản lý thông tin cá nhân và đơn hàng</p>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <div v-if="loading" class="flex justify-center py-12">
+        <svg class="animate-spin h-12 w-12 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+
+      <div v-else class="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <!-- Sidebar -->
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-md p-6 sticky top-20 animate-fade-in-up">
             <div class="flex flex-col items-center mb-6">
-              <div class="w-24 h-24 bg-primary-500 rounded-full flex items-center justify-center mb-4">
-                <span class="text-white text-3xl font-bold">{{ userInitial }}</span>
+              <div class="w-24 h-24 rounded-full flex items-center justify-center mb-4 overflow-hidden border-2 border-gray-200">
+                <img
+                  v-if="userData?.avatarUrl"
+                  :src="userData.avatarUrl"
+                  :alt="userData?.fullName || userData?.email || 'User'"
+                  class="w-full h-full object-cover"
+                  @error="handleAvatarError"
+                />
+                <div
+                  v-else
+                  class="w-full h-full bg-primary-500 flex items-center justify-center"
+                >
+                  <span class="text-white text-3xl font-bold">{{ userInitial }}</span>
+                </div>
               </div>
-              <h3 class="font-bold text-gray-900 text-lg">{{ authStore.user?.name }}</h3>
-              <p class="text-gray-600 text-sm">{{ authStore.user?.email }}</p>
+              <h3 class="font-bold text-gray-900 text-lg">{{ userData?.fullName || 'Người dùng' }}</h3>
+              <p class="text-gray-600 text-sm">{{ userData?.email || '' }}</p>
             </div>
 
             <nav class="space-y-2">
@@ -57,12 +76,14 @@
             <form @submit.prevent="saveProfile" class="space-y-6">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Họ và tên</label>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Họ và tên *</label>
                   <input
-                    v-model="profileForm.name"
+                    v-model="profileForm.fullName"
                     type="text"
+                    required
                     :disabled="!editMode"
                     class="input-field disabled:bg-gray-100"
+                    placeholder="Nhập họ và tên"
                   />
                 </div>
                 <div>
@@ -77,35 +98,126 @@
                 <div>
                   <label class="block text-sm font-semibold text-gray-700 mb-2">Số điện thoại</label>
                   <input
-                    v-model="profileForm.phone"
+                    v-model="profileForm.phoneNumber"
                     type="tel"
                     :disabled="!editMode"
                     class="input-field disabled:bg-gray-100"
+                    placeholder="Nhập số điện thoại"
                   />
                 </div>
                 <div>
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Ngày sinh</label>
-                  <input
-                    v-model="profileForm.birthday"
-                    type="date"
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Giới tính</label>
+                  <select
+                    v-model="profileForm.sex"
                     :disabled="!editMode"
                     class="input-field disabled:bg-gray-100"
+                  >
+                    <option value="">-- Chọn giới tính --</option>
+                    <option value="Male">Nam</option>
+                    <option value="Female">Nữ</option>
+                    <option value="Other">Khác</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Năm sinh</label>
+                  <input
+                    v-model.number="profileForm.birthYear"
+                    type="number"
+                    min="1900"
+                    max="2100"
+                    :disabled="!editMode"
+                    class="input-field disabled:bg-gray-100"
+                    placeholder="VD: 1990"
                   />
+                </div>
+                <div class="md:col-span-2">
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Ảnh đại diện</label>
+                  <div class="flex flex-col sm:flex-row gap-4">
+                    <!-- Avatar Preview -->
+                    <div class="flex-shrink-0">
+                      <div class="w-32 h-32 rounded-full overflow-hidden border-2 border-gray-200 flex items-center justify-center bg-gray-100">
+                        <img
+                          v-if="avatarPreview || profileForm.avatarUrl"
+                          :src="avatarPreview || profileForm.avatarUrl"
+                          alt="Avatar preview"
+                          class="w-full h-full object-cover"
+                          @error="handleAvatarPreviewError"
+                        />
+                        <div v-else class="w-full h-full bg-primary-500 flex items-center justify-center">
+                          <span class="text-white text-4xl font-bold">{{ userInitial }}</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <!-- Upload Options -->
+                    <div class="flex-1 space-y-3">
+                      <div v-if="editMode">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tải ảnh từ máy</label>
+                        <div class="flex items-center space-x-3">
+                          <input
+                            ref="fileInput"
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                            @change="handleFileSelect"
+                            :disabled="uploadingAvatar"
+                            class="hidden"
+                          />
+                          <button
+                            type="button"
+                            @click="$refs.fileInput.click()"
+                            :disabled="uploadingAvatar"
+                            class="btn-secondary text-sm"
+                          >
+                            {{ uploadingAvatar ? 'Đang tải...' : 'Chọn ảnh' }}
+                          </button>
+                          <button
+                            v-if="selectedFile"
+                            type="button"
+                            @click="uploadAvatar"
+                            :disabled="uploadingAvatar"
+                            class="btn-primary text-sm"
+                          >
+                            {{ uploadingAvatar ? 'Đang upload...' : 'Upload' }}
+                          </button>
+                          <button
+                            v-if="selectedFile"
+                            type="button"
+                            @click="clearSelectedFile"
+                            class="text-sm text-gray-600 hover:text-gray-800"
+                          >
+                            Hủy
+                          </button>
+                        </div>
+                        <p v-if="selectedFile" class="text-xs text-gray-500 mt-1">
+                          {{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})
+                        </p>
+                        <p v-if="avatarError" class="text-xs text-red-600 mt-1">{{ avatarError }}</p>
+                        <p class="text-xs text-gray-500 mt-1">Định dạng: JPG, PNG, GIF, WEBP (Tối đa 5MB)</p>
+                      </div>
+                      <div v-else class="text-sm text-gray-500">
+                        Nhấn "Chỉnh sửa" để thay đổi ảnh đại diện
+                      </div>
+                      
+                      <div class="border-t pt-3">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Hoặc nhập URL</label>
+                        <input
+                          v-model="profileForm.avatarUrl"
+                          type="url"
+                          :disabled="!editMode"
+                          class="input-field disabled:bg-gray-100 text-sm"
+                          placeholder="https://example.com/avatar.jpg"
+                          @input="avatarPreview = null"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Địa chỉ</label>
-                <textarea
-                  v-model="profileForm.address"
-                  rows="3"
-                  :disabled="!editMode"
-                  class="input-field disabled:bg-gray-100"
-                ></textarea>
-              </div>
-
               <div v-if="editMode" class="flex space-x-3">
-                <button type="submit" class="btn-primary">Lưu thay đổi</button>
+                <button type="submit" :disabled="saving" class="btn-primary">
+                  {{ saving ? 'Đang lưu...' : 'Lưu thay đổi' }}
+                </button>
                 <button type="button" @click="cancelEdit" class="btn-secondary">Hủy</button>
               </div>
             </form>
@@ -113,7 +225,15 @@
 
           <!-- Orders -->
           <div v-if="activeTab === 'orders'" class="space-y-4 animate-fade-in-up">
-            <h2 class="text-xl font-bold text-gray-900 mb-4">Đơn hàng của tôi</h2>
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-xl font-bold text-gray-900">Đơn hàng của tôi</h2>
+              <router-link
+                to="/orders"
+                class="btn-secondary text-sm"
+              >
+                Xem tất cả đơn hàng
+              </router-link>
+            </div>
             
             <div
               v-for="order in orders"
@@ -122,33 +242,55 @@
             >
               <div class="flex justify-between items-start mb-4">
                 <div>
-                  <h3 class="font-bold text-gray-900">Đơn hàng #{{ order.id }}</h3>
-                  <p class="text-sm text-gray-600">{{ order.date }}</p>
+                  <h3 class="font-bold text-gray-900">Đơn hàng #{{ order.code || order.id }}</h3>
+                  <p class="text-sm text-gray-600">{{ formatDate(order.createDate) }}</p>
                 </div>
-                <span :class="statusClasses[order.status]" class="px-4 py-2 rounded-full text-sm font-semibold">
-                  {{ order.status }}
+                <span :class="getStatusClass(order.status)" class="px-4 py-2 rounded-full text-sm font-semibold">
+                  {{ getStatusLabel(order.status) }}
                 </span>
               </div>
 
-              <div class="space-y-3 mb-4">
-                <div v-for="item in order.items" :key="item.id" class="flex items-center space-x-4">
-                  <img :src="item.image" :alt="item.name" class="w-16 h-16 object-cover rounded-lg" />
+              <div v-if="order.items && order.items.length > 0" class="space-y-3 mb-4">
+                <div v-for="item in order.items" :key="item.id" class="flex items-center space-x-4 border-b pb-3 last:border-0">
                   <div class="flex-1">
-                    <h4 class="font-semibold text-gray-900">{{ item.name }}</h4>
-                    <p class="text-sm text-gray-600">Size: {{ item.size }} x {{ item.quantity }}</p>
+                    <h4 class="font-semibold text-gray-900">{{ item.productName || 'Sản phẩm' }}</h4>
+                    <p class="text-sm text-gray-600">Số lượng: {{ item.quantity || 1 }}</p>
+                    <p class="text-sm text-gray-600">Đơn giá: {{ formatPrice(item.price || 0) }}</p>
                   </div>
-                  <span class="font-bold text-gray-900">{{ formatPrice(item.price * item.quantity) }}</span>
+                  <span class="font-bold text-gray-900">{{ formatPrice((item.price || 0) * (item.quantity || 1)) }}</span>
                 </div>
               </div>
 
-              <div class="border-t pt-4 flex justify-between items-center">
-                <span class="text-gray-700">Tổng cộng:</span>
-                <span class="text-2xl font-bold text-primary-600">{{ formatPrice(order.total) }}</span>
+              <div class="border-t pt-4 space-y-2">
+                <div v-if="order.subTotal" class="flex justify-between text-sm text-gray-600">
+                  <span>Tạm tính:</span>
+                  <span>{{ formatPrice(order.subTotal) }}</span>
+                </div>
+                <div v-if="order.discount" class="flex justify-between text-sm text-gray-600">
+                  <span>Giảm giá:</span>
+                  <span class="text-red-600">-{{ formatPrice(order.discount) }}</span>
+                </div>
+                <div class="flex justify-between items-center border-t pt-2">
+                  <span class="text-gray-700 font-semibold">Tổng cộng:</span>
+                  <span class="text-2xl font-bold text-primary-600">{{ formatPrice(order.total || 0) }}</span>
+                </div>
               </div>
 
-              <div class="mt-4 flex space-x-3">
-                <button class="btn-primary">Xem chi tiết</button>
-                <button v-if="order.status === 'Đang giao'" class="btn-secondary">Theo dõi đơn hàng</button>
+              <div v-if="order.receiverName || order.receiverPhone || order.receiverAddress" class="mt-4 pt-4 border-t">
+                <p class="text-sm font-semibold text-gray-700 mb-2">Thông tin nhận hàng:</p>
+                <p class="text-sm text-gray-600" v-if="order.receiverName">Người nhận: {{ order.receiverName }}</p>
+                <p class="text-sm text-gray-600" v-if="order.receiverPhone">SĐT: {{ order.receiverPhone }}</p>
+                <p class="text-sm text-gray-600" v-if="order.receiverAddress">Địa chỉ: {{ order.receiverAddress }}</p>
+              </div>
+              
+              <div class="mt-4 pt-4 border-t">
+                <router-link
+                  :to="`/orders/${order.id}`"
+                  class="btn-secondary text-sm w-full text-center"
+                  @click.stop
+                >
+                  Xem chi tiết đơn hàng
+                </router-link>
               </div>
             </div>
 
@@ -157,44 +299,6 @@
               title="Chưa có đơn hàng"
               description="Bạn chưa có đơn hàng nào. Hãy bắt đầu mua sắm!"
               action-text="Mua sắm ngay"
-              @action="$router.push('/products')"
-            />
-          </div>
-
-          <!-- Wishlist -->
-          <div v-if="activeTab === 'wishlist'" class="animate-fade-in-up">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">Sản phẩm yêu thích</h2>
-            
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div
-                v-for="product in wishlist"
-                :key="product.id"
-                class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                <div class="relative aspect-square">
-                  <img :src="product.image" :alt="product.name" class="w-full h-full object-cover" />
-                  <button
-                    @click="removeFromWishlist(product.id)"
-                    class="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors"
-                  >
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-                <div class="p-4">
-                  <h3 class="font-bold text-gray-900 mb-2">{{ product.name }}</h3>
-                  <p class="text-xl font-bold text-primary-600 mb-3">{{ formatPrice(product.price) }}</p>
-                  <button class="w-full btn-primary">Thêm vào giỏ</button>
-                </div>
-              </div>
-            </div>
-
-            <EmptyState
-              v-if="wishlist.length === 0"
-              title="Danh sách yêu thích trống"
-              description="Bạn chưa có sản phẩm yêu thích nào"
-              action-text="Khám phá sản phẩm"
               @action="$router.push('/products')"
             />
           </div>
@@ -213,27 +317,193 @@
                 v-for="address in addresses"
                 :key="address.id"
                 class="border-2 rounded-lg p-4 hover:border-primary-500 transition-colors"
-                :class="{ 'border-primary-500 bg-primary-50': address.isDefault }"
+                :class="{ 'border-primary-500 bg-primary-50': address.status === 'Active' }"
               >
                 <div class="flex justify-between items-start mb-2">
-                  <h4 class="font-bold text-gray-900">{{ address.name }}</h4>
-                  <span v-if="address.isDefault" class="badge-primary">Mặc định</span>
+                  <h4 class="font-bold text-gray-900">{{ address.receiverName || 'Địa chỉ' }}</h4>
+                  <span v-if="address.status === 'Active'" class="badge-primary text-xs">Mặc định</span>
                 </div>
-                <p class="text-gray-600 text-sm mb-1">{{ address.phone }}</p>
-                <p class="text-gray-600 text-sm">{{ address.fullAddress }}</p>
+                <p v-if="address.receiverPhone" class="text-gray-600 text-sm mb-1">{{ address.receiverPhone }}</p>
+                <p v-if="address.receiverEmail" class="text-gray-600 text-sm mb-1">{{ address.receiverEmail }}</p>
+                <p class="text-gray-600 text-sm">
+                  {{ formatAddress(address) }}
+                </p>
                 <div class="mt-4 flex space-x-2">
-                  <button class="text-primary-600 hover:text-primary-700 text-sm font-semibold">Sửa</button>
-                  <button v-if="!address.isDefault" class="text-red-600 hover:text-red-700 text-sm font-semibold">Xóa</button>
-                  <button v-if="!address.isDefault" class="text-gray-600 hover:text-gray-700 text-sm font-semibold">Đặt mặc định</button>
+                  <button @click="editAddress(address)" class="text-primary-600 hover:text-primary-700 text-sm font-semibold">Sửa</button>
+                  <button @click="deleteAddress(address)" class="text-red-600 hover:text-red-700 text-sm font-semibold">Xóa</button>
                 </div>
               </div>
             </div>
+
+            <EmptyState
+              v-if="addresses.length === 0"
+              title="Chưa có địa chỉ"
+              description="Thêm địa chỉ để dễ dàng đặt hàng"
+              action-text="Thêm địa chỉ"
+              @action="showAddressModal = true"
+            />
           </div>
         </div>
       </div>
     </div>
 
     <Footer />
+
+    <!-- Delete Address Confirmation Modal -->
+    <Modal :show="showDeleteAddressModal" title="Xác nhận xóa địa chỉ" @close="showDeleteAddressModal = false">
+      <div class="space-y-4">
+        <p class="text-gray-700">Bạn có chắc chắn muốn xóa địa chỉ này?</p>
+        <div v-if="addressToDelete" class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <p class="font-semibold text-gray-900">{{ addressToDelete.receiverName }}</p>
+          <p class="text-sm text-gray-600">{{ addressToDelete.receiverPhone }}</p>
+          <p class="text-sm text-gray-600">{{ formatAddress(addressToDelete) }}</p>
+        </div>
+        <p class="text-sm text-red-600 font-semibold">Hành động này không thể hoàn tác!</p>
+      </div>
+      <template #footer>
+        <button @click="confirmDeleteAddress" :disabled="deletingAddress" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">
+          {{ deletingAddress ? 'Đang xóa...' : 'Xóa địa chỉ' }}
+        </button>
+        <button @click="showDeleteAddressModal = false" :disabled="deletingAddress" class="btn-secondary">
+          Hủy
+        </button>
+      </template>
+    </Modal>
+
+    <!-- Address Modal -->
+    <Modal :show="showAddressModal" :title="editingAddress ? 'Chỉnh sửa địa chỉ' : 'Thêm địa chỉ mới'" @close="closeAddressModal">
+      <form @submit.prevent="saveAddress" class="space-y-4">
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Tên người nhận *</label>
+          <input
+            v-model="addressForm.receiverName"
+            type="text"
+            required
+            class="input-field"
+            placeholder="Nhập tên người nhận"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Số điện thoại *</label>
+          <input
+            v-model="addressForm.receiverPhone"
+            type="tel"
+            required
+            class="input-field"
+            placeholder="Nhập số điện thoại"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Email</label>
+          <input
+            v-model="addressForm.receiverEmail"
+            type="email"
+            class="input-field"
+            placeholder="Nhập email (tùy chọn)"
+          />
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Tỉnh/Thành phố *</label>
+          <div class="relative" ref="provinceDropdownRef">
+            <input
+              v-model="provinceSearchQuery"
+              @input="filterProvinces"
+              @focus="showProvinceDropdown = true"
+              type="text"
+              :placeholder="addressForm.provinceName || 'Tìm kiếm hoặc chọn Tỉnh/Thành phố...'"
+              class="input-field w-full"
+              :disabled="loadingProvinces"
+            />
+            <div
+              v-if="showProvinceDropdown && filteredProvinces.length > 0"
+              class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+            >
+              <div
+                v-for="province in filteredProvinces"
+                :key="province.code"
+                @click="selectProvince(province)"
+                class="px-4 py-2 hover:bg-primary-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                :class="{ 'bg-primary-100': addressForm.provinceCode === province.code }"
+              >
+                {{ province.name }}
+              </div>
+            </div>
+            <div
+              v-if="showProvinceDropdown && filteredProvinces.length === 0 && !loadingProvinces"
+              class="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg p-4 text-center text-gray-500"
+            >
+              Không tìm thấy tỉnh/thành phố nào
+            </div>
+          </div>
+          <input
+            v-model="addressForm.provinceName"
+            type="hidden"
+          />
+          <input
+            v-model="addressForm.provinceCode"
+            type="hidden"
+          />
+          <p v-if="loadingProvinces" class="text-xs text-gray-500 mt-1">Đang tải {{ provinces.length }} tỉnh/thành phố...</p>
+          <p v-else-if="provinces.length > 0" class="text-xs text-gray-500 mt-1">
+            Gõ để tìm kiếm.
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Quận/Huyện *</label>
+          <select
+            v-model="addressForm.districtCode"
+            @change="onDistrictChange"
+            required
+            class="input-field"
+            :disabled="!addressForm.provinceCode || loadingDistricts"
+          >
+            <option value="">-- Chọn Quận/Huyện --</option>
+            <option v-for="district in districts" :key="district.code" :value="district.code">
+              {{ district.name }}
+            </option>
+          </select>
+          <input
+            v-model="addressForm.districtName"
+            type="hidden"
+          />
+          <p v-if="loadingDistricts" class="text-xs text-gray-500 mt-1">Đang tải...</p>
+          <p v-if="!addressForm.provinceCode" class="text-xs text-gray-500 mt-1">Vui lòng chọn Tỉnh/Thành phố trước</p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-semibold text-gray-700 mb-2">Phường/Xã *</label>
+          <select
+            v-model="addressForm.wardCode"
+            @change="onWardChange"
+            required
+            class="input-field"
+            :disabled="!addressForm.districtCode || loadingWards"
+          >
+            <option value="">-- Chọn Phường/Xã --</option>
+            <option v-for="ward in wards" :key="ward.code" :value="ward.code">
+              {{ ward.name }}
+            </option>
+          </select>
+          <input
+            v-model="addressForm.wardName"
+            type="hidden"
+          />
+          <p v-if="loadingWards" class="text-xs text-gray-500 mt-1">Đang tải...</p>
+          <p v-if="!addressForm.districtCode" class="text-xs text-gray-500 mt-1">Vui lòng chọn Quận/Huyện trước</p>
+        </div>
+
+      </form>
+      <template #footer>
+        <button @click="saveAddress" :disabled="savingAddress" class="btn-primary">
+          {{ savingAddress ? 'Đang lưu...' : (editingAddress ? 'Cập nhật' : 'Thêm địa chỉ') }}
+        </button>
+        <button @click="closeAddressModal" class="btn-secondary">Hủy</button>
+      </template>
+    </Modal>
 
     <Toast
       :show="toast.show"
@@ -245,26 +515,77 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, h } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted, watch, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
+import { accountApi, orderApi, addressApi, imageApi } from '../../services/api'
+import ghnLocationApi from '../../services/ghnLocationApi'
 import Navbar from '../../components/user/Navbar.vue'
 import Footer from '../../components/user/Footer.vue'
 import Toast from '../../components/common/Toast.vue'
 import EmptyState from '../../components/common/EmptyState.vue'
+import Modal from '../../components/common/Modal.vue'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
+const loading = ref(true)
 const activeTab = ref('profile')
 const editMode = ref(false)
 const showAddressModal = ref(false)
+const saving = ref(false)
+const savingAddress = ref(false)
+const showDeleteAddressModal = ref(false)
+const addressToDelete = ref(null)
+const deletingAddress = ref(false)
+const editingAddress = ref(null)
+const uploadingAvatar = ref(false)
+const selectedFile = ref(null)
+const avatarPreview = ref(null)
+const avatarError = ref('')
+const fileInput = ref(null)
+
+const userData = ref(null)
+const orders = ref([])
+const addresses = ref([])
+
+const provinces = ref([])
+const filteredProvinces = ref([])
+const districts = ref([])
+const wards = ref([])
+const loadingProvinces = ref(false)
+const loadingDistricts = ref(false)
+const loadingWards = ref(false)
+const provinceSearchQuery = ref('')
+const showProvinceDropdown = ref(false)
+const provinceDropdownRef = ref(null)
+
+const addressForm = reactive({
+  receiverName: '',
+  receiverPhone: '',
+  receiverEmail: '',
+  provinceId: null,
+  provinceCode: '',
+  provinceName: '',
+  districtId: null,
+  districtCode: '',
+  districtName: '',
+  wardCode: '',
+  wardName: ''
+})
 
 const toast = reactive({
   show: false,
   message: '',
   type: 'success'
 })
+
+// Helper function to show toast
+function showToast(message, type = 'success') {
+  toast.message = message
+  toast.type = type
+  toast.show = true
+}
 
 // Icons
 const UserIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' }, [
@@ -275,10 +596,6 @@ const OrderIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke: '
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z' })
 ])
 
-const HeartIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' }, [
-  h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' })
-])
-
 const LocationIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' }, [
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z' })
 ])
@@ -286,97 +603,592 @@ const LocationIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke
 const tabs = [
   { id: 'profile', name: 'Thông tin', icon: UserIcon },
   { id: 'orders', name: 'Đơn hàng', icon: OrderIcon },
-  { id: 'wishlist', name: 'Yêu thích', icon: HeartIcon },
   { id: 'addresses', name: 'Địa chỉ', icon: LocationIcon }
 ]
 
 const profileForm = reactive({
-  name: 'Nguyễn Văn A',
-  email: 'user@sneakerpoly.com',
-  phone: '0912345678',
-  birthday: '1990-01-01',
-  address: 'Đường Trịnh Văn Bô, Nam Từ Liêm, Hà Nội'
+  fullName: '',
+  email: '',
+  phoneNumber: '',
+  sex: '',
+  birthYear: null,
+  avatarUrl: ''
 })
 
-const orders = ref([
-  {
-    id: '10234',
-    date: '15/10/2024',
-    status: 'Đang giao',
-    total: 3500000,
-    items: [
-      { id: 1, name: 'Nike Air Max 2024', size: 42, quantity: 1, price: 3500000, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100' }
-    ]
-  },
-  {
-    id: '10233',
-    date: '10/10/2024',
-    status: 'Hoàn thành',
-    total: 4200000,
-    items: [
-      { id: 2, name: 'Adidas Ultraboost', size: 41, quantity: 1, price: 4200000, image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=100' }
-    ]
-  }
-])
-
-const wishlist = ref([
-  { id: 1, name: 'Jordan Retro High', price: 5500000, image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=400' },
-  { id: 2, name: 'Puma RS-X', price: 2800000, image: 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=400' }
-])
-
-const addresses = ref([
-  {
-    id: 1,
-    name: 'Nhà riêng',
-    phone: '0912345678',
-    fullAddress: 'Đường Trịnh Văn Bô, Nam Từ Liêm, Hà Nội',
-    isDefault: true
-  },
-  {
-    id: 2,
-    name: 'Văn phòng',
-    phone: '0987654321',
-    fullAddress: 'Số 1 Đại Cồ Việt, Hai Bà Trưng, Hà Nội',
-    isDefault: false
-  }
-])
-
-const statusClasses = {
-  'Đang xử lý': 'bg-yellow-100 text-yellow-800',
-  'Đang giao': 'bg-blue-100 text-blue-800',
-  'Hoàn thành': 'bg-green-100 text-green-800',
-  'Đã hủy': 'bg-red-100 text-red-800'
-}
-
 const userInitial = computed(() => {
-  return authStore.user?.name?.charAt(0).toUpperCase() || 'U'
+  if (userData.value?.fullName) {
+    const names = userData.value.fullName.split(' ')
+    return names.length > 1
+      ? `${names[0][0]}${names[names.length - 1][0]}`.toUpperCase()
+      : names[0][0].toUpperCase()
+  }
+  if (userData.value?.email) {
+    return userData.value.email.substring(0, 2).toUpperCase()
+  }
+  return 'U'
 })
 
 function formatPrice(price) {
+  if (!price && price !== 0) return '0 VNĐ'
   return new Intl.NumberFormat('vi-VN', {
     style: 'currency',
     currency: 'VND'
   }).format(price)
 }
 
-function saveProfile() {
-  // Save profile logic
-  editMode.value = false
-  toast.message = 'Đã cập nhật thông tin thành công'
-  toast.type = 'success'
-  toast.show = true
+function formatDate(date) {
+  if (!date) return 'N/A'
+  return new Date(date).toLocaleDateString('vi-VN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+function formatAddress(address) {
+  const parts = []
+  if (address.wardName) parts.push(address.wardName)
+  if (address.districtName) parts.push(address.districtName)
+  if (address.provinceName) parts.push(address.provinceName)
+  return parts.length > 0 ? parts.join(', ') : 'Chưa có địa chỉ'
+}
+
+function getStatusClass(status) {
+  const classes = {
+    'Pending': 'bg-yellow-100 text-yellow-800',
+    'Processing': 'bg-blue-100 text-blue-800',
+    'Shipping': 'bg-purple-100 text-purple-800',
+    'Delivered': 'bg-green-100 text-green-800',
+    'Cancelled': 'bg-red-100 text-red-800'
+  }
+  return classes[status] || 'bg-gray-100 text-gray-800'
+}
+
+function getStatusLabel(status) {
+  const labels = {
+    'Pending': 'Đang chờ',
+    'Processing': 'Đang xử lý',
+    'Shipping': 'Đang giao',
+    'Delivered': 'Đã giao',
+    'Cancelled': 'Đã hủy'
+  }
+  return labels[status] || status
+}
+
+function handleAvatarError(event) {
+  event.target.style.display = 'none'
+  const parent = event.target.parentElement
+  if (parent) {
+    const placeholder = parent.querySelector('.avatar-placeholder') || document.createElement('div')
+    placeholder.className = 'avatar-placeholder w-full h-full bg-primary-500 flex items-center justify-center'
+    placeholder.innerHTML = `<span class="text-white text-3xl font-bold">${userInitial.value}</span>`
+    if (!parent.querySelector('.avatar-placeholder')) {
+      parent.appendChild(placeholder)
+    }
+  }
+}
+
+function handleAvatarPreviewError(event) {
+  event.target.style.display = 'none'
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files?.[0]
+  if (!file) {
+    selectedFile.value = null
+    avatarPreview.value = null
+    avatarError.value = ''
+    return
+  }
+
+  avatarError.value = ''
+
+  // Validate file type
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+  if (!allowedTypes.includes(file.type)) {
+    avatarError.value = 'Định dạng file không hợp lệ. Chỉ chấp nhận: JPG, PNG, GIF, WEBP'
+    selectedFile.value = null
+    return
+  }
+
+  // Validate file size (5MB)
+  const maxSize = 5 * 1024 * 1024
+  if (file.size > maxSize) {
+    avatarError.value = 'Kích thước file vượt quá 5MB'
+    selectedFile.value = null
+    return
+  }
+
+  selectedFile.value = file
+
+  // Create preview
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    avatarPreview.value = e.target.result
+  }
+  reader.readAsDataURL(file)
+}
+
+function clearSelectedFile() {
+  selectedFile.value = null
+  avatarPreview.value = null
+  avatarError.value = ''
+  if (fileInput.value) {
+    fileInput.value.value = ''
+  }
+}
+
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+}
+
+async function uploadAvatar() {
+  if (!selectedFile.value) {
+    avatarError.value = 'Vui lòng chọn file'
+    return
+  }
+
+  uploadingAvatar.value = true
+  avatarError.value = ''
+
+  try {
+    // Upload to Cloudinary via Image API
+    const result = await imageApi.upload(selectedFile.value, 'Avatar', 'avatars')
+    
+    // Update avatarUrl in form
+    profileForm.avatarUrl = result.url
+    
+    // Clear selected file and preview
+    clearSelectedFile()
+    
+    toast.message = 'Đã upload ảnh đại diện thành công'
+    toast.type = 'success'
+    toast.show = true
+  } catch (error) {
+    console.error('Error uploading avatar:', error)
+    avatarError.value = error.response?.data?.message || 'Không thể upload ảnh'
+    toast.message = 'Không thể upload ảnh đại diện'
+    toast.type = 'error'
+    toast.show = true
+  } finally {
+    uploadingAvatar.value = false
+  }
+}
+
+async function loadUserData() {
+  if (!authStore.user?.id) {
+    router.push('/login')
+    return
+  }
+
+  try {
+    loading.value = true
+    const [user, userOrders, userAddresses] = await Promise.all([
+      accountApi.getMe(),
+      orderApi.getMyOrders().catch(() => []),
+      addressApi.getByAccountId().catch(() => [])
+    ])
+
+    userData.value = user
+    orders.value = userOrders || []
+    addresses.value = userAddresses || []
+
+    // Populate form
+    profileForm.fullName = user.fullName || ''
+    profileForm.email = user.email || ''
+    profileForm.phoneNumber = user.phoneNumber || ''
+    profileForm.sex = user.sex || ''
+    profileForm.birthYear = user.birthYear || null
+    profileForm.avatarUrl = user.avatarUrl || ''
+  } catch (error) {
+    console.error('Error loading user data:', error)
+    toast.message = 'Không thể tải thông tin tài khoản'
+    toast.type = 'error'
+    toast.show = true
+  } finally {
+    loading.value = false
+  }
+}
+
+async function saveProfile() {
+  if (!authStore.user?.id) return
+
+  saving.value = true
+  try {
+    await accountApi.update(authStore.user.id, {
+      fullName: profileForm.fullName,
+      phoneNumber: profileForm.phoneNumber,
+      sex: profileForm.sex || null,
+      birthYear: profileForm.birthYear || null,
+      avatarUrl: profileForm.avatarUrl || null
+    })
+
+    // Reload user data
+    await loadUserData()
+
+    editMode.value = false
+    toast.message = 'Đã cập nhật thông tin thành công'
+    toast.type = 'success'
+    toast.show = true
+  } catch (error) {
+    console.error('Error saving profile:', error)
+    toast.message = error.response?.data?.message || 'Không thể cập nhật thông tin'
+    toast.type = 'error'
+    toast.show = true
+  } finally {
+    saving.value = false
+  }
 }
 
 function cancelEdit() {
   editMode.value = false
-  // Reset form
+  // Reset form to original data
+  if (userData.value) {
+    profileForm.fullName = userData.value.fullName || ''
+    profileForm.phoneNumber = userData.value.phoneNumber || ''
+    profileForm.sex = userData.value.sex || ''
+    profileForm.birthYear = userData.value.birthYear || null
+    profileForm.avatarUrl = userData.value.avatarUrl || ''
+  }
 }
 
-function removeFromWishlist(id) {
-  wishlist.value = wishlist.value.filter(item => item.id !== id)
-  toast.message = 'Đã xóa khỏi danh sách yêu thích'
-  toast.type = 'success'
-  toast.show = true
+async function loadProvinces() {
+  if (provinces.value.length > 0) {
+    filterProvinces() // Update filtered list
+    return // Already loaded
+  }
+  
+  loadingProvinces.value = true
+  try {
+    // Use GHN API instead of old Location API
+    const data = await ghnLocationApi.getProvinces()
+    
+    // GHN API returns array with structure: { provinceID, provinceName }
+    // Map to match expected structure: { id, code, name }
+    provinces.value = (data || []).map(p => ({
+      id: p.provinceID,
+      code: p.provinceID.toString(),
+      name: p.provinceName
+    }))
+    
+    // Sort provinces by name
+    provinces.value.sort((a, b) => {
+      const nameA = (a.name || '').toLowerCase()
+      const nameB = (b.name || '').toLowerCase()
+      return nameA.localeCompare(nameB, 'vi')
+    })
+    
+    // Initialize filtered list
+    filteredProvinces.value = provinces.value
+    
+    if (provinces.value.length === 0) {
+      toast.message = 'Không có dữ liệu tỉnh/thành phố'
+      toast.type = 'warning'
+      toast.show = true
+    } else {
+      console.log(`Loaded ${provinces.value.length} provinces`)
+    }
+  } catch (error) {
+    console.error('Error loading provinces:', error)
+    toast.message = 'Không thể tải danh sách tỉnh/thành phố: ' + (error.response?.data?.message || error.message || 'Lỗi không xác định')
+    toast.type = 'error'
+    toast.show = true
+  } finally {
+    loadingProvinces.value = false
+  }
 }
+
+function filterProvinces() {
+  const query = provinceSearchQuery.value.toLowerCase().trim()
+  if (!query) {
+    filteredProvinces.value = provinces.value
+  } else {
+    filteredProvinces.value = provinces.value.filter(p => {
+      const name = (p.name || '').toLowerCase()
+      const code = (p.code || '').toLowerCase()
+      return name.includes(query) || code.includes(query)
+    })
+  }
+}
+
+function selectProvince(province) {
+  addressForm.provinceId = province.id // GHN Province ID
+  addressForm.provinceCode = province.code
+  addressForm.provinceName = province.name
+  provinceSearchQuery.value = province.name
+  showProvinceDropdown.value = false
+  onProvinceChange()
+}
+
+async function onProvinceChange() {
+  // Reset districts and wards when province changes
+  addressForm.districtId = null
+  addressForm.districtCode = ''
+  addressForm.districtName = ''
+  addressForm.wardCode = ''
+  addressForm.wardName = ''
+  districts.value = []
+  wards.value = []
+  
+  if (!addressForm.provinceId) {
+    addressForm.provinceName = ''
+    return
+  }
+  
+  // Load districts using GHN API
+  loadingDistricts.value = true
+  try {
+    const data = await ghnLocationApi.getDistricts(addressForm.provinceId)
+    
+    // Map GHN data to match existing structure
+    districts.value = (data || []).map(d => ({
+      id: d.districtID,
+      code: d.districtID.toString(),
+      name: d.districtName
+    }))
+    
+    if (districts.value.length === 0) {
+      showToast('Không có dữ liệu quận/huyện cho tỉnh/thành phố này', 'warning')
+    }
+  } catch (error) {
+    console.error('Error loading districts:', error)
+    showToast('Không thể tải danh sách quận/huyện', 'error')
+  } finally {
+    loadingDistricts.value = false
+  }
+}
+
+async function onDistrictChange() {
+  // Reset wards when district changes
+  addressForm.wardCode = ''
+  addressForm.wardName = ''
+  wards.value = []
+  
+  if (!addressForm.districtCode) {
+    addressForm.districtName = ''
+    return
+  }
+  
+  // Find district info from selected code
+  const selectedDistrict = districts.value.find(d => d.code === addressForm.districtCode)
+  if (selectedDistrict) {
+    addressForm.districtId = selectedDistrict.id
+    addressForm.districtName = selectedDistrict.name
+  }
+  
+  // Load wards using GHN API
+  loadingWards.value = true
+  try {
+    const data = await ghnLocationApi.getWards(addressForm.districtId)
+    
+    // Map GHN data to match existing structure
+    wards.value = (data || []).map(w => ({
+      code: w.wardCode,
+      name: w.wardName
+    }))
+    
+    if (wards.value.length === 0) {
+      showToast('Không có dữ liệu phường/xã cho quận/huyện này', 'warning')
+    }
+  } catch (error) {
+    console.error('Error loading wards:', error)
+    showToast('Không thể tải danh sách phường/xã', 'error')
+  } finally {
+    loadingWards.value = false
+  }
+}
+
+function onWardChange() {
+  if (!addressForm.wardCode) {
+    addressForm.wardName = ''
+    return
+  }
+  
+  // Find ward name from selected code
+  const selectedWard = wards.value.find(w => w.code === addressForm.wardCode)
+  if (selectedWard) {
+    addressForm.wardName = selectedWard.name
+  }
+}
+
+async function editAddress(address) {
+  editingAddress.value = address
+  addressForm.receiverName = address.receiverName || ''
+  addressForm.receiverPhone = address.receiverPhone || ''
+  addressForm.receiverEmail = address.receiverEmail || ''
+  addressForm.provinceName = address.provinceName || ''
+  addressForm.districtName = address.districtName || ''
+  addressForm.wardName = address.wardName || ''
+  
+  // Set GHN IDs if available
+  addressForm.provinceId = address.provinceId || null
+  addressForm.districtId = address.districtId || null
+  addressForm.wardCode = address.wardCode || ''
+  
+  // Load provinces if not loaded
+  await loadProvinces()
+  
+  // Try to find and set province from ID or name
+  if (address.provinceId) {
+    const province = provinces.value.find(p => p.id === address.provinceId)
+    if (province) {
+      addressForm.provinceId = province.id
+      addressForm.provinceCode = province.code
+      addressForm.provinceName = province.name
+      provinceSearchQuery.value = province.name
+      await onProvinceChange()
+      
+      // Try to find district
+      if (address.districtName) {
+        const district = districts.value.find(d => 
+          d.name === address.districtName || 
+          d.name.toLowerCase().includes(address.districtName.toLowerCase())
+        )
+        if (district) {
+          addressForm.districtCode = district.code
+          await onDistrictChange()
+          
+          // Try to find ward
+          if (address.wardName) {
+            const ward = wards.value.find(w => 
+              w.name === address.wardName || 
+              w.name.toLowerCase().includes(address.wardName.toLowerCase())
+            )
+            if (ward) {
+              addressForm.wardCode = ward.code
+              onWardChange()
+            }
+          }
+        }
+      }
+    }
+  }
+  
+  showAddressModal.value = true
+}
+
+function deleteAddress(address) {
+  addressToDelete.value = address
+  showDeleteAddressModal.value = true
+}
+
+async function confirmDeleteAddress() {
+  if (!addressToDelete.value) return
+
+  deletingAddress.value = true
+  try {
+    await addressApi.delete(addressToDelete.value.id)
+    await loadUserData()
+    toast.message = 'Đã xóa địa chỉ thành công'
+    toast.type = 'success'
+    toast.show = true
+    showDeleteAddressModal.value = false
+    addressToDelete.value = null
+  } catch (error) {
+    console.error('Error deleting address:', error)
+    toast.message = error.response?.data?.message || 'Không thể xóa địa chỉ'
+    toast.type = 'error'
+    toast.show = true
+  } finally {
+    deletingAddress.value = false
+  }
+}
+
+
+async function saveAddress() {
+  if (!authStore.user?.id) return
+
+  savingAddress.value = true
+  try {
+    const addressData = {
+      receiverName: addressForm.receiverName,
+      receiverPhone: addressForm.receiverPhone,
+      receiverEmail: addressForm.receiverEmail || null,
+      provinceName: addressForm.provinceName,
+      districtName: addressForm.districtName,
+      wardName: addressForm.wardName,
+      provinceId: addressForm.provinceId,
+      districtId: addressForm.districtId,
+      wardCode: addressForm.wardCode,
+      status: 'Inactive' // Tất cả địa chỉ mặc định là Inactive, sẽ chọn khi checkout
+    }
+
+    if (editingAddress.value) {
+      // Update existing address
+      await addressApi.update(editingAddress.value.id, addressData)
+      showToast('Đã cập nhật địa chỉ thành công', 'success')
+    } else {
+      // Create new address
+      addressData.accountId = authStore.user.id
+      await addressApi.create(addressData)
+      showToast('Đã thêm địa chỉ thành công', 'success')
+    }
+
+    await loadUserData()
+    closeAddressModal()
+  } catch (error) {
+    console.error('Error saving address:', error)
+    showToast(error.response?.data?.message || 'Không thể lưu địa chỉ', 'error')
+  } finally {
+    savingAddress.value = false
+  }
+}
+
+function closeAddressModal() {
+  showAddressModal.value = false
+  editingAddress.value = null
+  districts.value = []
+  wards.value = []
+  provinceSearchQuery.value = ''
+  showProvinceDropdown.value = false
+  Object.assign(addressForm, {
+    receiverName: '',
+    receiverPhone: '',
+    receiverEmail: '',
+    provinceId: null,
+    provinceCode: '',
+    provinceName: '',
+    districtId: null,
+    districtCode: '',
+    districtName: '',
+    wardCode: '',
+    wardName: ''
+  })
+}
+
+onMounted(async () => {
+  await Promise.all([
+    loadUserData(),
+    loadProvinces()
+  ])
+})
+
+// Watch for modal opening to load provinces
+watch(showAddressModal, async (isOpen) => {
+  if (isOpen) {
+    await loadProvinces()
+  } else {
+    showProvinceDropdown.value = false
+    provinceSearchQuery.value = ''
+  }
+})
+
+// Close dropdown when clicking outside
+function handleClickOutside(event) {
+  if (provinceDropdownRef.value && !provinceDropdownRef.value.contains(event.target)) {
+    showProvinceDropdown.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
-

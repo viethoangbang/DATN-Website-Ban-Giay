@@ -7,11 +7,11 @@
           <h2 class="text-xl font-bold text-gray-900">Báo cáo thống kê</h2>
           <p class="text-gray-600 text-sm">Phân tích chi tiết về doanh thu và sản phẩm</p>
         </div>
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-3 items-center">
           <button
             v-for="period in periods"
             :key="period.value"
-            @click="selectedPeriod = period.value"
+            @click="changePeriod(period.value)"
             :class="[
               'px-4 py-2 rounded-lg font-medium transition-all duration-300',
               selectedPeriod === period.value
@@ -21,12 +21,30 @@
           >
             {{ period.label }}
           </button>
+          <button
+            @click="exportReport"
+            :disabled="loading"
+            class="px-4 py-2 rounded-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-all duration-300 flex items-center space-x-2 disabled:opacity-50"
+          >
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Xuất file</span>
+          </button>
         </div>
       </div>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="flex justify-center items-center py-12">
+      <svg class="animate-spin h-12 w-12 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
+
     <!-- Summary Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div v-if="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div
         v-for="(summary, index) in summaryCards"
         :key="summary.title"
@@ -49,7 +67,7 @@
     </div>
 
     <!-- Charts Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div v-if="!loading" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Sales Trend -->
       <div class="bg-white rounded-xl shadow-md p-6 animate-fade-in-up" style="animation-delay: 0.4s;">
         <div class="flex items-center justify-between mb-6">
@@ -95,7 +113,7 @@
     </div>
 
     <!-- Top Selling Products Table -->
-    <div class="bg-white rounded-xl shadow-md p-6 animate-fade-in-up" style="animation-delay: 0.8s;">
+    <div v-if="!loading" class="bg-white rounded-xl shadow-md p-6 animate-fade-in-up" style="animation-delay: 0.8s;">
       <div class="flex items-center justify-between mb-6">
         <h3 class="text-lg font-bold text-gray-900">Top sản phẩm bán chạy</h3>
         <button class="text-primary-600 hover:text-primary-700 text-sm font-semibold">
@@ -123,22 +141,21 @@
               </td>
               <td class="px-6 py-4">
                 <div class="flex items-center space-x-3">
-                  <img :src="product.image" :alt="product.name" class="w-10 h-10 object-cover rounded-lg" />
+                  <img :src="product.image" :alt="product.name" class="w-10 h-10 object-cover rounded-lg" @error="handleImageError" />
                   <div>
                     <p class="font-semibold text-gray-900">{{ product.name }}</p>
-                    <p class="text-sm text-gray-600">{{ product.category }}</p>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-4 font-semibold text-gray-900">
-                {{ product.sold }} units
+                {{ product.sold }}
               </td>
               <td class="px-6 py-4 font-semibold text-gray-900">
                 {{ formatPrice(product.revenue) }}
               </td>
               <td class="px-6 py-4">
-                <span :class="product.growth > 0 ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100'" class="px-3 py-1 rounded-full text-sm font-semibold">
-                  {{ product.growth > 0 ? '+' : '' }}{{ product.growth }}%
+                <span class="text-gray-600 bg-gray-100 px-3 py-1 rounded-full text-sm font-semibold">
+                  N/A
                 </span>
               </td>
               <td class="px-6 py-4">
@@ -155,7 +172,7 @@
     </div>
 
     <!-- Revenue Comparison -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div v-if="!loading" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div class="lg:col-span-2 bg-white rounded-xl shadow-md p-6 animate-fade-in-up" style="animation-delay: 0.9s;">
         <h3 class="text-lg font-bold text-gray-900 mb-6">So sánh doanh thu chi tiết</h3>
         <div class="h-96">
@@ -182,12 +199,19 @@
         </div>
       </div>
     </div>
+
+    <!-- Toast -->
+    <Toast :show="toast.show" :message="toast.message" :type="toast.type" @close="toast.show = false" />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Chart } from 'chart.js'
+import { ref, reactive, onMounted, watch, computed, nextTick } from 'vue'
+import { Chart, registerables } from 'chart.js'
+import { dashboardApi, handleApiError } from '@/services/api'
+import Toast from '@/components/common/Toast.vue'
+
+Chart.register(...registerables)
 
 const salesTrendChart = ref(null)
 const productPerformanceChart = ref(null)
@@ -195,8 +219,17 @@ const customerChart = ref(null)
 const regionChart = ref(null)
 const revenueComparisonChart = ref(null)
 const sparklineRefs = ref([])
+const chartInstances = ref([])
 
 const selectedPeriod = ref('month')
+const loading = ref(false)
+const reportsData = ref(null)
+
+const toast = reactive({
+  show: false,
+  message: '',
+  type: 'success'
+})
 
 const periods = [
   { label: '7 ngày', value: 'week' },
@@ -205,59 +238,100 @@ const periods = [
   { label: 'Năm nay', value: 'year' }
 ]
 
-const summaryCards = [
-  {
-    title: 'Tổng doanh thu',
-    value: '₫486M',
-    change: '+18.2%',
-    color: '#f97316',
-    bgColor: 'bg-gradient-to-br from-primary-500 to-primary-600',
-    badgeClass: 'bg-green-100 text-green-800',
-    icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
-  },
-  {
-    title: 'Đơn hàng',
-    value: '2,543',
-    change: '+12.4%',
-    color: '#3b82f6',
-    bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600',
-    badgeClass: 'bg-green-100 text-green-800',
-    icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z'
-  },
-  {
-    title: 'Khách hàng mới',
-    value: '1,245',
-    change: '+24.8%',
-    color: '#10b981',
-    bgColor: 'bg-gradient-to-br from-green-500 to-green-600',
-    badgeClass: 'bg-green-100 text-green-800',
-    icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z'
-  },
-  {
-    title: 'Tỷ lệ hoàn đơn',
-    value: '2.4%',
-    change: '-1.2%',
-    color: '#8b5cf6',
-    bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
-    badgeClass: 'bg-red-100 text-red-800',
-    icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15'
-  }
-]
+const summaryCards = computed(() => {
+  if (!reportsData.value?.stats) return []
+  
+  const stats = reportsData.value.stats
+  return [
+    {
+      title: 'Tổng doanh thu',
+      value: formatPrice(stats.totalRevenue),
+      change: `${stats.revenueChangePercent >= 0 ? '+' : ''}${stats.revenueChangePercent}%`,
+      color: '#f97316',
+      bgColor: 'bg-gradient-to-br from-primary-500 to-primary-600',
+      badgeClass: stats.revenueChangePercent >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
+      icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
+    },
+    {
+      title: 'Đơn hàng',
+      value: stats.totalOrders.toLocaleString('vi-VN'),
+      change: `${stats.ordersChangePercent >= 0 ? '+' : ''}${stats.ordersChangePercent}%`,
+      color: '#3b82f6',
+      bgColor: 'bg-gradient-to-br from-blue-500 to-blue-600',
+      badgeClass: stats.ordersChangePercent >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
+      icon: 'M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z'
+    },
+    {
+      title: 'Khách hàng mới',
+      value: stats.totalCustomers.toLocaleString('vi-VN'),
+      change: `${stats.customersChangePercent >= 0 ? '+' : ''}${stats.customersChangePercent}%`,
+      color: '#10b981',
+      bgColor: 'bg-gradient-to-br from-green-500 to-green-600',
+      badgeClass: stats.customersChangePercent >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
+      icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z'
+    },
+    {
+      title: 'Tổng sản phẩm',
+      value: stats.totalProducts.toLocaleString('vi-VN'),
+      change: `${stats.productsChangePercent >= 0 ? '+' : ''}${stats.productsChangePercent}%`,
+      color: '#8b5cf6',
+      bgColor: 'bg-gradient-to-br from-purple-500 to-purple-600',
+      badgeClass: stats.productsChangePercent >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800',
+      icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'
+    }
+  ]
+})
 
-const topProducts = [
-  { id: 1, name: 'Nike Air Max 2024', category: 'Running', sold: 456, revenue: 1596000000, growth: 15.3, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100' },
-  { id: 2, name: 'Adidas Ultraboost', category: 'Running', sold: 389, revenue: 1633800000, growth: 22.1, image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=100' },
-  { id: 3, name: 'Jordan Retro High', category: 'Basketball', sold: 312, revenue: 1716000000, growth: 8.7, image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=100' },
-  { id: 4, name: 'New Balance 574', category: 'Casual', sold: 287, revenue: 918400000, growth: -3.2, image: 'https://images.unsplash.com/photo-1539185441755-769473a23570?w=100' },
-  { id: 5, name: 'Puma RS-X', category: 'Casual', sold: 234, revenue: 655200000, growth: 11.5, image: 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=100' }
-]
+const topProducts = computed(() => {
+  if (!reportsData.value?.topProducts) return []
+  return reportsData.value.topProducts.map((p, index) => ({
+    ...p,
+    growth: 0, // Can be calculated if needed
+    image: p.imageUrl || 'https://via.placeholder.com/100'
+  }))
+})
 
-const quickStats = [
-  { label: 'Giá trị đơn trung bình', value: '₫1.9M', change: '+5.2%', changeClass: 'bg-green-100 text-green-800', percentage: 75, barColor: 'bg-green-500' },
-  { label: 'Tỷ lệ chuyển đổi', value: '3.24%', change: '+0.8%', changeClass: 'bg-green-100 text-green-800', percentage: 60, barColor: 'bg-blue-500' },
-  { label: 'Khách hàng quay lại', value: '42%', change: '+3.1%', changeClass: 'bg-green-100 text-green-800', percentage: 42, barColor: 'bg-purple-500' },
-  { label: 'Đánh giá trung bình', value: '4.7/5', change: '+0.2', changeClass: 'bg-green-100 text-green-800', percentage: 94, barColor: 'bg-yellow-500' }
-]
+const quickStats = computed(() => {
+  if (!reportsData.value?.stats) return []
+  
+  const stats = reportsData.value.stats
+  const avgOrderValue = stats.totalOrders > 0 ? stats.totalRevenue / stats.totalOrders : 0
+  
+  return [
+    { 
+      label: 'Giá trị đơn trung bình', 
+      value: formatPrice(avgOrderValue), 
+      change: '+0%', 
+      changeClass: 'bg-green-100 text-green-800', 
+      percentage: Math.min(100, (avgOrderValue / 2000000) * 100), 
+      barColor: 'bg-green-500' 
+    },
+    { 
+      label: 'Tỷ lệ chuyển đổi', 
+      value: 'N/A', 
+      change: 'N/A', 
+      changeClass: 'bg-gray-100 text-gray-800', 
+      percentage: 0, 
+      barColor: 'bg-blue-500' 
+    },
+    { 
+      label: 'Tổng khách hàng', 
+      value: stats.totalCustomers.toLocaleString('vi-VN'), 
+      change: `${stats.customersChangePercent >= 0 ? '+' : ''}${stats.customersChangePercent}%`, 
+      changeClass: stats.customersChangePercent >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 
+      percentage: Math.min(100, (stats.totalCustomers / 10000) * 100), 
+      barColor: 'bg-purple-500' 
+    },
+    { 
+      label: 'Tổng sản phẩm', 
+      value: stats.totalProducts.toLocaleString('vi-VN'), 
+      change: `${stats.productsChangePercent >= 0 ? '+' : ''}${stats.productsChangePercent}%`, 
+      changeClass: stats.productsChangePercent >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800', 
+      percentage: Math.min(100, (stats.totalProducts / 1000) * 100), 
+      barColor: 'bg-yellow-500' 
+    }
+  ]
+})
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN', {
@@ -272,31 +346,74 @@ function getRankColor(index) {
   return colors[index] || 'bg-gray-500'
 }
 
-onMounted(() => {
+const handleImageError = (event) => {
+  event.target.src = 'https://via.placeholder.com/100'
+}
+
+const loadReportsData = async () => {
+  try {
+    loading.value = true
+    reportsData.value = await dashboardApi.getReports(selectedPeriod.value)
+    await nextTick()
+    updateCharts()
+  } catch (error) {
+    showToast(handleApiError(error), 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const changePeriod = async (period) => {
+  selectedPeriod.value = period
+  await loadReportsData()
+}
+
+const exportReport = async () => {
+  try {
+    loading.value = true
+    const blob = await dashboardApi.exportReports(selectedPeriod.value, 'csv')
+    
+    // Create download link
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `BaoCao_${selectedPeriod.value}_${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    showToast('Xuất file thành công!', 'success')
+  } catch (error) {
+    showToast(handleApiError(error), 'error')
+  } finally {
+    loading.value = false
+  }
+}
+
+const updateCharts = () => {
+  if (!reportsData.value) return
+  
+  // Destroy existing charts
+  chartInstances.value.forEach(chart => {
+    if (chart) chart.destroy()
+  })
+  chartInstances.value = []
+  
   // Sales Trend Chart
-  if (salesTrendChart.value) {
-    new Chart(salesTrendChart.value, {
+  if (salesTrendChart.value && reportsData.value.monthlyRevenue) {
+    const chart = new Chart(salesTrendChart.value, {
       type: 'line',
       data: {
-        labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'T8', 'T9', 'T10', 'T11', 'T12'],
-        datasets: [
-          {
-            label: '2024',
-            data: [32, 38, 35, 45, 52, 48, 56, 62, 58, 65, 70, 68],
-            borderColor: '#f97316',
-            backgroundColor: 'rgba(249, 115, 22, 0.1)',
-            tension: 0.4,
-            fill: true
-          },
-          {
-            label: '2023',
-            data: [28, 32, 30, 38, 42, 40, 45, 48, 46, 52, 55, 53],
-            borderColor: '#3b82f6',
-            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-            tension: 0.4,
-            fill: true
-          }
-        ]
+        labels: reportsData.value.monthlyRevenue.map(m => m.month),
+        datasets: [{
+          label: 'Doanh thu',
+          data: reportsData.value.monthlyRevenue.map(m => m.revenue / 1000000), // Convert to millions
+          borderColor: '#f97316',
+          backgroundColor: 'rgba(249, 115, 22, 0.1)',
+          tension: 0.4,
+          fill: true
+        }]
       },
       options: {
         responsive: true,
@@ -310,17 +427,18 @@ onMounted(() => {
         }
       }
     })
+    chartInstances.value.push(chart)
   }
 
-  // Product Performance Chart (Radar)
-  if (productPerformanceChart.value) {
-    new Chart(productPerformanceChart.value, {
+  // Product Performance Chart (Category Revenue as Radar)
+  if (productPerformanceChart.value && reportsData.value.categoryRevenue) {
+    const chart = new Chart(productPerformanceChart.value, {
       type: 'radar',
       data: {
-        labels: ['Running', 'Basketball', 'Casual', 'Sports', 'Training'],
+        labels: reportsData.value.categoryRevenue.slice(0, 5).map(c => c.categoryName),
         datasets: [{
           label: 'Doanh số',
-          data: [85, 72, 90, 65, 78],
+          data: reportsData.value.categoryRevenue.slice(0, 5).map(c => Number(c.percentage)),
           backgroundColor: 'rgba(249, 115, 22, 0.2)',
           borderColor: '#f97316',
           borderWidth: 2
@@ -337,17 +455,18 @@ onMounted(() => {
         }
       }
     })
+    chartInstances.value.push(chart)
   }
 
-  // Customer Chart (Pie)
-  if (customerChart.value) {
-    new Chart(customerChart.value, {
+  // Category Revenue Chart (Pie)
+  if (customerChart.value && reportsData.value.categoryRevenue) {
+    const chart = new Chart(customerChart.value, {
       type: 'pie',
       data: {
-        labels: ['Khách mới', 'Khách cũ', 'Khách VIP'],
+        labels: reportsData.value.categoryRevenue.slice(0, 5).map(c => c.categoryName),
         datasets: [{
-          data: [45, 35, 20],
-          backgroundColor: ['#f97316', '#3b82f6', '#10b981'],
+          data: reportsData.value.categoryRevenue.slice(0, 5).map(c => Number(c.revenue)),
+          backgroundColor: ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#f59e0b'],
           borderWidth: 0
         }]
       },
@@ -359,17 +478,18 @@ onMounted(() => {
         }
       }
     })
+    chartInstances.value.push(chart)
   }
 
-  // Region Chart (Bar)
-  if (regionChart.value) {
-    new Chart(regionChart.value, {
+  // Category Revenue Bar Chart
+  if (regionChart.value && reportsData.value.categoryRevenue) {
+    const chart = new Chart(regionChart.value, {
       type: 'bar',
       data: {
-        labels: ['Hà Nội', 'TP.HCM', 'Đà Nẵng', 'Hải Phòng', 'Cần Thơ'],
+        labels: reportsData.value.categoryRevenue.slice(0, 5).map(c => c.categoryName),
         datasets: [{
           label: 'Doanh thu (triệu)',
-          data: [125, 142, 78, 65, 52],
+          data: reportsData.value.categoryRevenue.slice(0, 5).map(c => c.revenue / 1000000),
           backgroundColor: '#f97316'
         }]
       },
@@ -379,67 +499,80 @@ onMounted(() => {
         plugins: { legend: { display: false } }
       }
     })
+    chartInstances.value.push(chart)
   }
 
   // Revenue Comparison Chart
-  if (revenueComparisonChart.value) {
-    new Chart(revenueComparisonChart.value, {
+  if (revenueComparisonChart.value && reportsData.value.monthlyRevenue) {
+    const chart = new Chart(revenueComparisonChart.value, {
       type: 'bar',
       data: {
-        labels: ['T1', 'T2', 'T3', 'T4', 'T5', 'T6'],
-        datasets: [
-          {
-            label: 'Doanh thu',
-            data: [45, 52, 48, 56, 62, 58],
-            backgroundColor: '#f97316'
-          },
-          {
-            label: 'Chi phí',
-            data: [28, 32, 30, 35, 38, 36],
-            backgroundColor: '#3b82f6'
-          },
-          {
-            label: 'Lợi nhuận',
-            data: [17, 20, 18, 21, 24, 22],
-            backgroundColor: '#10b981'
-          }
-        ]
+        labels: reportsData.value.monthlyRevenue.map(m => m.month),
+        datasets: [{
+          label: 'Doanh thu',
+          data: reportsData.value.monthlyRevenue.map(m => m.revenue / 1000000),
+          backgroundColor: '#f97316'
+        }]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false
       }
     })
+    chartInstances.value.push(chart)
   }
 
-  // Sparklines
-  sparklineRefs.value.forEach((canvas, index) => {
-    if (canvas) {
-      const data = [12, 19, 15, 25, 22, 30, 28, 35]
-      new Chart(canvas, {
-        type: 'line',
-        data: {
-          labels: Array(8).fill(''),
-          datasets: [{
-            data: data,
-            borderColor: '#f97316',
-            borderWidth: 2,
-            tension: 0.4,
-            pointRadius: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            x: { display: false },
-            y: { display: false }
+  // Sparklines for top products
+  if (topProducts.value.length > 0) {
+    topProducts.value.forEach((product, index) => {
+      if (sparklineRefs.value[index]) {
+        const chart = new Chart(sparklineRefs.value[index], {
+          type: 'line',
+          data: {
+            labels: Array(8).fill(''),
+            datasets: [{
+              data: Array(8).fill(0).map(() => Math.random() * 100),
+              borderColor: '#f97316',
+              borderWidth: 2,
+              tension: 0.4,
+              pointRadius: 0
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { display: false },
+              y: { display: false }
+            }
           }
-        }
-      })
-    }
-  })
+        })
+        chartInstances.value.push(chart)
+      }
+    })
+  }
+}
+
+const showToast = (message, type = 'success') => {
+  toast.message = message
+  toast.type = type
+  toast.show = true
+  setTimeout(() => {
+    toast.show = false
+  }, 3000)
+}
+
+watch(selectedPeriod, () => {
+  loadReportsData()
+})
+
+watch(selectedPeriod, () => {
+  loadReportsData()
+})
+
+onMounted(async () => {
+  await loadReportsData()
 })
 </script>
 

@@ -44,7 +44,7 @@
               <!-- Product Image -->
               <div class="bg-gray-100 p-8 flex items-center justify-center">
                 <img
-                  :src="product.image"
+                  :src="displayImage"
                   :alt="product.name"
                   class="w-full h-auto max-h-96 object-contain"
                 />
@@ -52,42 +52,48 @@
 
               <!-- Product Info -->
               <div class="p-8">
-                <!-- Category -->
-                <span class="inline-block px-3 py-1 bg-primary-100 text-primary-600 rounded-full text-sm font-semibold mb-3">
-                  {{ product.category }}
-                </span>
+                <!-- Category & Badges -->
+                <div class="flex items-center gap-2 mb-3">
+                  <span class="inline-block px-3 py-1 bg-primary-100 text-primary-600 rounded-full text-sm font-semibold">
+                    {{ product.category }}
+                  </span>
+                  <span v-if="product.isNew" class="inline-block px-3 py-1 bg-primary-500 text-white rounded-full text-sm font-bold">
+                    MỚI
+                  </span>
+                  <span v-if="selectedVariant && selectedVariant.discountActive" class="inline-block px-3 py-1 bg-red-500 text-white rounded-full text-sm font-bold">
+                    {{ selectedVariant.discountType === 'Percentage' 
+                      ? `-${selectedVariant.discountValue}%` 
+                      : `-${formatCurrency(selectedVariant.discountValue)}` }}
+                  </span>
+                </div>
 
                 <!-- Product Name -->
                 <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
                   {{ product.name }}
                 </h2>
 
-                <!-- Rating -->
-                <div class="flex items-center space-x-2 mb-4">
-                  <div class="flex items-center">
-                    <svg v-for="i in 5" :key="i" class="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  </div>
-                  <span class="text-gray-600 text-sm">({{ product.rating }} đánh giá)</span>
-                </div>
-
                 <!-- Price -->
                 <div class="mb-6">
-                  <div v-if="product.salePrice" class="flex items-center space-x-3">
-                    <span class="text-3xl font-bold text-red-600">
-                      {{ formatPrice(product.salePrice) }}
-                    </span>
-                    <span class="text-xl text-gray-400 line-through">
-                      {{ formatPrice(product.price) }}
-                    </span>
-                    <span class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-bold">
-                      -{{ product.discount }}%
-                    </span>
+                  <div v-if="selectedVariantPrice">
+                    <div v-if="selectedVariant && selectedVariant.discountActive && selectedVariantDiscountedPrice < selectedVariantPrice" class="mb-2">
+                      <span class="text-lg text-gray-400 line-through">
+                        {{ formatPrice(selectedVariantPrice) }}
+                      </span>
+                    </div>
+                    <div>
+                      <span class="text-3xl font-bold text-primary-600">
+                        {{ formatPrice(selectedVariantDiscountedPrice) }}
+                      </span>
+                    </div>
                   </div>
                   <div v-else>
-                    <span class="text-3xl font-bold text-primary-600">
-                      {{ formatPrice(product.price) }}
+                    <div>
+                      <span class="text-3xl font-bold text-primary-600">
+                        {{ formatPrice(productDiscountedPrice) }}
+                      </span>
+                    </div>
+                    <span v-if="product.hasMultiplePrices" class="ml-2 text-sm text-gray-500">
+                      (Từ {{ formatPrice(product.minPrice) }} - {{ formatPrice(product.maxPrice) }})
                     </span>
                   </div>
                 </div>
@@ -98,21 +104,21 @@
                 </p>
 
                 <!-- Colors (if available) -->
-                <div v-if="product.colors && product.colors.length > 0" class="mb-6">
+                <div v-if="availableColors.length > 0" class="mb-6">
                   <label class="block text-sm font-bold text-gray-900 mb-3">Màu sắc:</label>
                   <div class="flex flex-wrap gap-3">
                     <button
-                      v-for="color in product.colors"
-                      :key="color"
-                      @click="selectedColor = color"
+                      v-for="color in availableColors"
+                      :key="color.name"
+                      @click="selectedColor = color.name"
                       :class="[
                         'w-10 h-10 rounded-full border-2 transition-all',
-                        selectedColor === color
+                        selectedColor === color.name
                           ? 'border-primary-500 ring-4 ring-primary-100'
                           : 'border-gray-300 hover:border-gray-400'
                       ]"
-                      :style="{ backgroundColor: color }"
-                      :title="color"
+                      :style="{ backgroundColor: color.value || '#ccc' }"
+                      :title="color.name"
                     ></button>
                   </div>
                 </div>
@@ -120,16 +126,22 @@
                 <!-- Size Selection -->
                 <div class="mb-6">
                   <label class="block text-sm font-bold text-gray-900 mb-3">Kích cỡ:</label>
-                  <div class="grid grid-cols-5 gap-2">
+                  <div v-if="availableSizes.length === 0" class="text-gray-500 text-sm">
+                    {{ selectedColor ? 'Không có size cho màu này' : 'Vui lòng chọn màu sắc trước' }}
+                  </div>
+                  <div v-else class="grid grid-cols-5 gap-2">
                     <button
-                      v-for="size in product.sizes"
+                      v-for="size in availableSizes"
                       :key="size"
                       @click="selectedSize = size"
+                      :disabled="!isSizeAvailable(size)"
                       :class="[
                         'py-3 px-4 rounded-lg border-2 font-semibold transition-all',
                         selectedSize === size
                           ? 'border-primary-500 bg-primary-500 text-white'
-                          : 'border-gray-300 text-gray-700 hover:border-primary-500'
+                          : isSizeAvailable(size)
+                            ? 'border-gray-300 text-gray-700 hover:border-primary-500'
+                            : 'border-gray-200 text-gray-400 cursor-not-allowed opacity-50'
                       ]"
                     >
                       {{ size }}
@@ -152,8 +164,9 @@
                     <input
                       v-model.number="quantity"
                       type="number"
-                      min="1"
-                      max="10"
+                      :min="1"
+                      :max="selectedVariant ? (selectedVariant.quantity || 1) : 10"
+                      @input="validateQuantity"
                       class="w-20 text-center py-2 border-2 border-gray-300 rounded-lg font-bold text-lg focus:outline-none focus:border-primary-500"
                     />
                     <button
@@ -169,10 +182,15 @@
 
                 <!-- Stock Status -->
                 <div class="mb-6 flex items-center space-x-2">
-                  <svg class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                  <svg v-if="selectedSize && isSizeAvailable(selectedSize)" class="w-5 h-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
                   </svg>
-                  <span class="text-green-600 font-semibold">Còn hàng</span>
+                  <svg v-else class="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                  </svg>
+                  <span :class="selectedSize && isSizeAvailable(selectedSize) ? 'text-green-600' : 'text-gray-500'" class="font-semibold">
+                    {{ selectedSize && isSizeAvailable(selectedSize) ? 'Còn hàng' : (selectedSize ? 'Hết hàng' : 'Vui lòng chọn size') }}
+                  </span>
                 </div>
 
                 <!-- Action Buttons -->
@@ -227,7 +245,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps({
@@ -241,19 +259,175 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['close', 'add-to-cart'])
+const emit = defineEmits(['close', 'add-to-cart', 'error'])
 
 const router = useRouter()
 const selectedSize = ref('')
 const selectedColor = ref('')
 const quantity = ref(1)
 
+// Extract colors and sizes from variants
+const availableColors = computed(() => {
+  if (!props.product?.variants || props.product.variants.length === 0) {
+    return []
+  }
+  
+  const colorMap = new Map()
+  props.product.variants.forEach(variant => {
+    if (variant.colorName && !colorMap.has(variant.colorName)) {
+      // Try to get color value from color name
+      const colorValue = getColorValue(variant.colorName)
+      colorMap.set(variant.colorName, {
+        name: variant.colorName,
+        value: colorValue
+      })
+    }
+  })
+  
+  return Array.from(colorMap.values())
+})
+
+const availableSizes = computed(() => {
+  if (!props.product?.variants || props.product.variants.length === 0) {
+    return []
+  }
+  
+  // Filter variants by selected color (if color is selected)
+  const filteredVariants = selectedColor.value
+    ? props.product.variants.filter(v => v.colorName === selectedColor.value)
+    : props.product.variants
+  
+  // Get unique sizes
+  const sizeSet = new Set()
+  filteredVariants.forEach(variant => {
+    if (variant.sizeName) {
+      sizeSet.add(variant.sizeName)
+    }
+  })
+  
+  // Sort sizes numerically if possible, otherwise alphabetically
+  return Array.from(sizeSet).sort((a, b) => {
+    const numA = parseFloat(a)
+    const numB = parseFloat(b)
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return numB - numA // Descending order
+    }
+    return a.localeCompare(b)
+  })
+})
+
+// Check if size is available (has quantity > 0)
+const isSizeAvailable = (size) => {
+  if (!props.product?.variants) return false
+  
+  const variant = props.product.variants.find(v => 
+    v.sizeName === size && 
+    (!selectedColor.value || v.colorName === selectedColor.value)
+  )
+  
+  return variant && (variant.quantity || 0) > 0
+}
+
+// Get selected variant
+const selectedVariant = computed(() => {
+  if (!props.product?.variants || !selectedSize.value) return null
+  
+  return props.product.variants.find(v => 
+    v.sizeName === selectedSize.value && 
+    (!selectedColor.value || v.colorName === selectedColor.value)
+  ) || null
+})
+
+// Giá gốc (từ backend)
+const selectedVariantPrice = computed(() => {
+  return selectedVariant.value?.price || null
+})
+
+// Giá sau discount (từ backend - đã tính sẵn)
+const selectedVariantDiscountedPrice = computed(() => {
+  return selectedVariant.value?.finalPrice || selectedVariant.value?.price || null
+})
+
+// Calculate discounted price for product (when no variant selected)
+const productDiscountedPrice = computed(() => {
+  // Nếu có variant với finalPrice, dùng nó
+  if (props.product?.variants && props.product.variants.length > 0) {
+    const firstVariant = props.product.variants[0]
+    return firstVariant.finalPrice || firstVariant.price || props.product.minPrice || props.product.price || 0
+  }
+  return props.product.minPrice || props.product.price || 0
+})
+
+// Get display image based on selected color
+const displayImage = computed(() => {
+  if (!props.product?.variants) return props.product.image || '/placeholder-shoe.jpg'
+  
+  // Try to find variant with selected color
+  if (selectedColor.value) {
+    const colorVariant = props.product.variants.find(v => 
+      v.colorName === selectedColor.value && 
+      (v.images?.length > 0 || v.imageUrl)
+    )
+    
+    if (colorVariant) {
+      return colorVariant.images?.[0]?.url || colorVariant.imageUrl || props.product.image
+    }
+  }
+  
+  // Fallback to product image or first variant image
+  return props.product.image || 
+         props.product.variants[0]?.images?.[0]?.url || 
+         props.product.variants[0]?.imageUrl || 
+         '/placeholder-shoe.jpg'
+})
+
+// Helper function to get color value from color name
+function getColorValue(colorName) {
+  if (!colorName) return '#ccc'
+  
+  const colorMap = {
+    'red': '#ef4444', 'đỏ': '#ef4444',
+    'blue': '#3b82f6', 'xanh dương': '#3b82f6', 'xanh': '#3b82f6',
+    'green': '#10b981', 'xanh lá': '#10b981',
+    'yellow': '#eab308', 'vàng': '#eab308',
+    'orange': '#f97316', 'cam': '#f97316',
+    'purple': '#a855f7', 'tím': '#a855f7',
+    'pink': '#ec4899', 'hồng': '#ec4899',
+    'black': '#000000', 'đen': '#000000',
+    'white': '#ffffff', 'trắng': '#ffffff',
+    'gray': '#6b7280', 'xám': '#6b7280', 'grey': '#6b7280',
+    'brown': '#92400e', 'nâu': '#92400e'
+  }
+  
+  const lowerName = colorName.toLowerCase()
+  return colorMap[lowerName] || '#ccc'
+}
+
 // Reset when modal opens
 watch(() => props.show, (newVal) => {
   if (newVal && props.product) {
-    selectedSize.value = props.product.sizes?.[0] || ''
-    selectedColor.value = props.product.colors?.[0] || ''
+    // Reset selections
+    selectedColor.value = ''
+    selectedSize.value = ''
     quantity.value = 1
+    
+    // Auto-select first color if available
+    if (availableColors.value.length > 0) {
+      selectedColor.value = availableColors.value[0].name
+    }
+    
+    // Auto-select first available size
+    if (availableSizes.value.length > 0) {
+      selectedSize.value = availableSizes.value[0]
+    }
+  }
+})
+
+// Update size options when color changes
+watch(selectedColor, () => {
+  selectedSize.value = ''
+  if (availableSizes.value.length > 0) {
+    selectedSize.value = availableSizes.value[0]
   }
 })
 
@@ -271,8 +445,24 @@ function decreaseQuantity() {
 }
 
 function increaseQuantity() {
-  if (quantity.value < 10) {
+  if (!selectedVariant.value) return
+  const stock = selectedVariant.value.quantity || 0
+  if (quantity.value < stock) {
     quantity.value++
+  } else {
+    emit('error', `Chỉ còn ${stock} sản phẩm trong kho`)
+  }
+}
+
+function validateQuantity() {
+  if (!selectedVariant.value) return
+  const stock = selectedVariant.value.quantity || 0
+  if (quantity.value > stock) {
+    quantity.value = stock
+    emit('error', `Chỉ còn ${stock} sản phẩm trong kho`)
+  }
+  if (quantity.value < 1) {
+    quantity.value = 1
   }
 }
 
@@ -281,12 +471,42 @@ function close() {
 }
 
 function addToCart() {
-  if (!selectedSize.value) return
+  if (!selectedSize.value) {
+    emit('error', 'Vui lòng chọn size')
+    return
+  }
+  
+  // Find the exact variant
+  const variant = props.product.variants?.find(v => 
+    v.sizeName === selectedSize.value && 
+    (!selectedColor.value || v.colorName === selectedColor.value)
+  )
+  
+  if (!variant) {
+    emit('error', 'Không tìm thấy biến thể sản phẩm')
+    return
+  }
+
+  // Validate stock
+  const stock = variant.quantity || 0
+  if (stock === 0) {
+    emit('error', 'Sản phẩm đã hết hàng')
+    return
+  }
+
+  if (quantity.value > stock) {
+    emit('error', `Chỉ còn ${stock} sản phẩm trong kho`)
+    return
+  }
 
   emit('add-to-cart', {
-    product: props.product,
+    product: {
+      ...props.product,
+      variantId: variant.id,
+      price: variant.price
+    },
     size: selectedSize.value,
-    color: selectedColor.value,
+    color: selectedColor.value || variant.colorName,
     quantity: quantity.value
   })
   close()
@@ -294,11 +514,26 @@ function addToCart() {
 
 function buyNow() {
   if (!selectedSize.value) return
+  
+  // Find the exact variant
+  const variant = props.product.variants?.find(v => 
+    v.sizeName === selectedSize.value && 
+    (!selectedColor.value || v.colorName === selectedColor.value)
+  )
+  
+  if (!variant) {
+    alert('Không tìm thấy biến thể sản phẩm')
+    return
+  }
 
   emit('add-to-cart', {
-    product: props.product,
+    product: {
+      ...props.product,
+      variantId: variant.id,
+      price: variant.price
+    },
     size: selectedSize.value,
-    color: selectedColor.value,
+    color: selectedColor.value || variant.colorName,
     quantity: quantity.value
   })
   close()

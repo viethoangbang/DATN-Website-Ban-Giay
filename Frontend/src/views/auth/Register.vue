@@ -1,461 +1,299 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-primary-50 via-white to-orange-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-    <div class="max-w-md w-full space-y-8 animate-fade-in-up">
-      <!-- Logo -->
-      <div class="text-center">
-        <router-link to="/" class="inline-flex items-center justify-center space-x-2 group">
-          <img 
-            src="/src/assets/logo.png" 
-            alt="SneakerPoly Logo" 
-            class="w-16 h-16 transform group-hover:scale-110 transition-transform duration-300"
-          />
-          <span class="text-2xl font-bold text-gray-900">
-            Sneaker<span class="text-primary-500">Poly</span>
-          </span>
-        </router-link>
-        <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+  <div class="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="w-full max-w-md space-y-8">
+      <div>
+        <img class="mx-auto h-16 w-auto" src="@/assets/logo.png" alt="Logo" />
+        <h2 class="mt-6 text-center text-3xl font-bold tracking-tight text-gray-900">
           Tạo tài khoản mới
         </h2>
-        <p class="mt-2 text-sm text-gray-600">
+        <p class="mt-2 text-center text-sm text-gray-600">
           Đã có tài khoản?
-          <router-link to="/login" class="font-medium text-primary-600 hover:text-primary-500 transition-colors">
+          <router-link
+            to="/login"
+            class="font-medium text-indigo-600 hover:text-indigo-500"
+          >
             Đăng nhập ngay
           </router-link>
         </p>
       </div>
 
-      <!-- Register Form -->
-      <div class="bg-white rounded-2xl shadow-xl p-8">
-        <form @submit.prevent="handleRegister" class="space-y-6">
-          <!-- Full Name -->
+      <form class="mt-8 space-y-6" @submit.prevent="handleRegister">
+        <div class="space-y-4 rounded-md shadow-sm">
           <div>
-            <label for="fullName" class="block text-sm font-bold text-gray-700 mb-2">
-              Họ và tên <span class="text-red-500">*</span>
-            </label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-              <input
-                id="fullName"
-                v-model="form.fullName"
-                type="text"
-                required
-                maxlength="255"
-                class="input-field pl-10"
-                :class="{ 'border-red-500': errors.fullName }"
-                placeholder="Nguyễn Văn A"
-                @blur="validateFullName"
-              />
-            </div>
-            <p v-if="errors.fullName" class="mt-1 text-sm text-red-600">{{ errors.fullName }}</p>
+            <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
+            <input
+              id="email"
+              v-model="formData.email"
+              type="email"
+              required
+              class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
+              :class="{ 'border-red-500': errors.email }"
+              placeholder="Nhập email của bạn"
+            />
+            <p v-if="errors.email" class="mt-1 text-sm text-red-500">
+              {{ errors.email }}
+            </p>
           </div>
 
-          <!-- Email -->
           <div>
-            <label for="email" class="block text-sm font-bold text-gray-700 mb-2">
-              Email <span class="text-red-500">*</span>
-            </label>
+            <label for="password" class="block text-sm font-medium text-gray-700">Mật khẩu</label>
             <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <input
-                id="email"
-                v-model="form.email"
-                type="email"
-                required
-                maxlength="255"
-                class="input-field pl-10"
-                :class="{ 'border-red-500': errors.email }"
-                placeholder="example@email.com"
-                @blur="validateEmail"
-              />
-            </div>
-            <p v-if="errors.email" class="mt-1 text-sm text-red-600">{{ errors.email }}</p>
-          </div>
-
-          <!-- Phone -->
-          <div>
-            <label for="phone" class="block text-sm font-bold text-gray-700 mb-2">
-              Số điện thoại
-            </label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                </svg>
-              </div>
-              <input
-                id="phone"
-                v-model="form.phone"
-                type="tel"
-                maxlength="20"
-                class="input-field pl-10"
-                :class="{ 'border-red-500': errors.phone }"
-                placeholder="0912345678"
-                @blur="validatePhone"
-              />
-            </div>
-            <p v-if="errors.phone" class="mt-1 text-sm text-red-600">{{ errors.phone }}</p>
-          </div>
-
-          <!-- Password -->
-          <div>
-            <label for="password" class="block text-sm font-bold text-gray-700 mb-2">
-              Mật khẩu <span class="text-red-500">*</span>
-            </label>
-            <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
               <input
                 id="password"
-                v-model="form.password"
+                v-model="formData.password"
                 :type="showPassword ? 'text' : 'password'"
                 required
-                minlength="6"
-                maxlength="255"
-                class="input-field pl-10 pr-10"
+                class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                 :class="{ 'border-red-500': errors.password }"
-                placeholder="Tối thiểu 6 ký tự"
-                @blur="validatePassword"
+                placeholder="Ít nhất 6 ký tự"
               />
               <button
                 type="button"
                 @click="showPassword = !showPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
               >
-                <svg v-if="showPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                <svg
+                  v-if="!showPassword"
+                  class="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path
+                    fill-rule="evenodd"
+                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
-                <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <svg
+                  v-if="showPassword"
+                  class="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
+                    clip-rule="evenodd"
+                  />
+                  <path
+                    d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"
+                  />
                 </svg>
               </button>
             </div>
-            <p v-if="errors.password" class="mt-1 text-sm text-red-600">{{ errors.password }}</p>
-            <!-- Password Strength Indicator -->
-            <div v-if="form.password" class="mt-2">
-              <div class="flex space-x-1">
-                <div
-                  v-for="i in 4"
-                  :key="i"
-                  class="h-1 flex-1 rounded-full"
-                  :class="i <= passwordStrength ? passwordStrengthColor : 'bg-gray-200'"
-                ></div>
-              </div>
-              <p class="text-xs mt-1" :class="passwordStrengthColor.replace('bg-', 'text-')">
-                {{ passwordStrengthText }}
-              </p>
-            </div>
+            <p v-if="errors.password" class="mt-1 text-sm text-red-500">
+              {{ errors.password }}
+            </p>
+            <p class="mt-1 text-xs text-gray-500">
+              Mật khẩu phải có ít nhất 6 ký tự
+            </p>
           </div>
 
-          <!-- Confirm Password -->
           <div>
-            <label for="confirmPassword" class="block text-sm font-bold text-gray-700 mb-2">
-              Xác nhận mật khẩu <span class="text-red-500">*</span>
-            </label>
+            <label for="confirmPassword" class="block text-sm font-medium text-gray-700">Xác nhận mật khẩu</label>
             <div class="relative">
-              <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
               <input
                 id="confirmPassword"
-                v-model="form.confirmPassword"
+                v-model="formData.confirmPassword"
                 :type="showConfirmPassword ? 'text' : 'password'"
                 required
-                class="input-field pl-10 pr-10"
+                class="mt-1 block w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 text-gray-900 placeholder-gray-500 focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 sm:text-sm"
                 :class="{ 'border-red-500': errors.confirmPassword }"
                 placeholder="Nhập lại mật khẩu"
-                @blur="validateConfirmPassword"
               />
               <button
                 type="button"
                 @click="showConfirmPassword = !showConfirmPassword"
-                class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                class="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
               >
-                <svg v-if="showConfirmPassword" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                <svg
+                  v-if="!showConfirmPassword"
+                  class="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path
+                    fill-rule="evenodd"
+                    d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                    clip-rule="evenodd"
+                  />
                 </svg>
-                <svg v-else class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                <svg
+                  v-if="showConfirmPassword"
+                  class="h-5 w-5"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z"
+                    clip-rule="evenodd"
+                  />
+                  <path
+                    d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"
+                  />
                 </svg>
               </button>
             </div>
-            <p v-if="errors.confirmPassword" class="mt-1 text-sm text-red-600">{{ errors.confirmPassword }}</p>
+            <p v-if="errors.confirmPassword" class="mt-1 text-sm text-red-500">
+              {{ errors.confirmPassword }}
+            </p>
           </div>
+        </div>
 
-          <!-- Terms & Conditions -->
-          <div class="flex items-start">
-            <input
-              id="terms"
-              v-model="form.acceptTerms"
-              type="checkbox"
-              required
-              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded mt-1"
-            />
-            <label for="terms" class="ml-2 block text-sm text-gray-700">
-              Tôi đồng ý với
-              <a href="#" class="text-primary-600 hover:text-primary-500 font-medium">Điều khoản dịch vụ</a>
-              và
-              <a href="#" class="text-primary-600 hover:text-primary-500 font-medium">Chính sách bảo mật</a>
-            </label>
+        <div v-if="errorMessage" class="rounded-md bg-red-50 p-4">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg
+                class="h-5 w-5 text-red-400"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div class="ml-3">
+              <p class="text-sm text-red-800">{{ errorMessage }}</p>
+            </div>
           </div>
+        </div>
 
-          <!-- Submit Button -->
+        <div>
           <button
             type="submit"
-            :disabled="loading || !isFormValid"
-            class="w-full btn-primary py-4 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            :disabled="loading"
+            class="group relative flex w-full justify-center rounded-lg border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <svg v-if="loading" class="animate-spin h-5 w-5 text-white" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>{{ loading ? 'Đang xử lý...' : 'Đăng ký' }}</span>
+            <span v-if="!loading">Đăng ký</span>
+            <span v-else class="flex items-center">
+              <svg
+                class="mr-2 h-5 w-5 animate-spin text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  class="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  stroke-width="4"
+                ></circle>
+                <path
+                  class="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              Đang đăng ký...
+            </span>
           </button>
-        </form>
+        </div>
 
-        
-      </div>
-
-      <!-- Back to Home -->
-      <div class="text-center">
-        <router-link to="/" class="text-sm text-gray-600 hover:text-primary-600 transition-colors flex items-center justify-center space-x-1">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          <span>Quay lại trang chủ</span>
-        </router-link>
-      </div>
+        <p class="text-center text-xs text-gray-500">
+          Thông tin chi tiết (họ tên, số điện thoại, địa chỉ) có thể bổ sung sau trong trang cá nhân
+        </p>
+      </form>
     </div>
-
-    <!-- Toast Notification -->
-    <Toast
-      :show="toast.show"
-      :message="toast.message"
-      :type="toast.type"
-      @close="toast.show = false"
-    />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, reactive } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../../stores/auth'
-import Toast from '../../components/common/Toast.vue'
+import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const authStore = useAuthStore()
 
-const loading = ref(false)
-const showPassword = ref(false)
-const showConfirmPassword = ref(false)
-
-const form = reactive({
-  fullName: '',
+const formData = reactive({
   email: '',
-  phone: '',
-  password: '',
-  confirmPassword: '',
-  acceptTerms: false
-})
-
-const errors = reactive({
-  fullName: '',
-  email: '',
-  phone: '',
   password: '',
   confirmPassword: ''
 })
 
-const toast = reactive({
-  show: false,
-  message: '',
-  type: 'success'
+const errors = reactive({
+  email: '',
+  password: '',
+  confirmPassword: ''
 })
 
-// Validation functions
-function validateFullName() {
-  if (!form.fullName.trim()) {
-    errors.fullName = 'Vui lòng nhập họ tên'
-    return false
-  }
-  if (form.fullName.length < 2) {
-    errors.fullName = 'Họ tên phải có ít nhất 2 ký tự'
-    return false
-  }
-  errors.fullName = ''
-  return true
-}
+const errorMessage = ref('')
+const loading = ref(false)
+const showPassword = ref(false)
+const showConfirmPassword = ref(false)
 
-function validateEmail() {
-  if (!form.email.trim()) {
+const validateForm = () => {
+  let isValid = true
+  Object.keys(errors).forEach(key => errors[key] = '')
+  errorMessage.value = ''
+
+  // Email validation
+  if (!formData.email) {
     errors.email = 'Vui lòng nhập email'
-    return false
-  }
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(form.email)) {
+    isValid = false
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
     errors.email = 'Email không hợp lệ'
-    return false
+    isValid = false
   }
-  errors.email = ''
-  return true
-}
 
-function validatePhone() {
-  if (form.phone && form.phone.trim()) {
-    const phoneRegex = /^[0-9]{10,11}$/
-    if (!phoneRegex.test(form.phone.replace(/\s/g, ''))) {
-      errors.phone = 'Số điện thoại không hợp lệ (10-11 số)'
-      return false
-    }
-  }
-  errors.phone = ''
-  return true
-}
-
-function validatePassword() {
-  if (!form.password) {
+  // Password validation
+  if (!formData.password) {
     errors.password = 'Vui lòng nhập mật khẩu'
-    return false
-  }
-  if (form.password.length < 6) {
+    isValid = false
+  } else if (formData.password.length < 6) {
     errors.password = 'Mật khẩu phải có ít nhất 6 ký tự'
-    return false
+    isValid = false
   }
-  errors.password = ''
-  return true
-}
 
-function validateConfirmPassword() {
-  if (!form.confirmPassword) {
+  // Confirm password validation
+  if (!formData.confirmPassword) {
     errors.confirmPassword = 'Vui lòng xác nhận mật khẩu'
-    return false
+    isValid = false
+  } else if (formData.password !== formData.confirmPassword) {
+    errors.confirmPassword = 'Mật khẩu xác nhận không khớp'
+    isValid = false
   }
-  if (form.password !== form.confirmPassword) {
-    errors.confirmPassword = 'Mật khẩu không khớp'
-    return false
-  }
-  errors.confirmPassword = ''
-  return true
+
+  return isValid
 }
 
-// Password strength
-const passwordStrength = computed(() => {
-  const password = form.password
-  if (!password) return 0
-  
-  let strength = 0
-  if (password.length >= 6) strength++
-  if (password.length >= 8) strength++
-  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++
-  if (/[0-9]/.test(password) && /[^a-zA-Z0-9]/.test(password)) strength++
-  
-  return strength
-})
-
-const passwordStrengthColor = computed(() => {
-  switch (passwordStrength.value) {
-    case 1: return 'bg-red-500'
-    case 2: return 'bg-yellow-500'
-    case 3: return 'bg-blue-500'
-    case 4: return 'bg-green-500'
-    default: return 'bg-gray-200'
-  }
-})
-
-const passwordStrengthText = computed(() => {
-  switch (passwordStrength.value) {
-    case 1: return 'Yếu'
-    case 2: return 'Trung bình'
-    case 3: return 'Mạnh'
-    case 4: return 'Rất mạnh'
-    default: return ''
-  }
-})
-
-const isFormValid = computed(() => {
-  return form.fullName && 
-         form.email && 
-         form.password && 
-         form.confirmPassword && 
-         form.acceptTerms &&
-         !errors.fullName && 
-         !errors.email && 
-         !errors.phone &&
-         !errors.password && 
-         !errors.confirmPassword
-})
-
-async function handleRegister() {
-  // Validate all fields
-  const isValid = validateFullName() && 
-                  validateEmail() && 
-                  validatePhone() &&
-                  validatePassword() && 
-                  validateConfirmPassword()
-  
-  if (!isValid) {
-    toast.message = 'Vui lòng kiểm tra lại thông tin'
-    toast.type = 'error'
-    toast.show = true
-    return
-  }
-
-  if (!form.acceptTerms) {
-    toast.message = 'Vui lòng đồng ý với điều khoản dịch vụ'
-    toast.type = 'error'
-    toast.show = true
-    return
-  }
+const handleRegister = async () => {
+  if (!validateForm()) return
 
   loading.value = true
+  errorMessage.value = ''
 
   try {
-    // TODO: Replace with actual API call
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    const result = await authStore.register({
+      email: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword
+    })
 
-    const userData = {
-      fullName: form.fullName.trim(),
-      email: form.email.trim().toLowerCase(),
-      phone: form.phone?.trim() || null,
-      password: form.password,
-      role: 'user'
+    if (result.success) {
+      // Redirect to home page after successful registration
+      router.push('/')
+    } else {
+      errorMessage.value = result.message || 'Đăng ký thất bại'
     }
-
-    // Simulate registration
-    console.log('Registering user:', { ...userData, password: '***' })
-
-    toast.message = 'Đăng ký thành công! Đang chuyển hướng...'
-    toast.type = 'success'
-    toast.show = true
-
-    // Redirect to login after success
-    setTimeout(() => {
-      router.push('/login')
-    }, 1500)
-
   } catch (error) {
-    console.error('Registration error:', error)
-    toast.message = error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại'
-    toast.type = 'error'
-    toast.show = true
+    errorMessage.value = error.response?.data?.message || 'Đã xảy ra lỗi khi đăng ký'
+    console.error('Register error:', error)
   } finally {
     loading.value = false
   }
 }
 </script>
-

@@ -1,5 +1,23 @@
 <template>
   <div class="space-y-6 animate-fade-in">
+    <!-- Loading State -->
+    <div v-if="loading" class="flex items-center justify-center h-64">
+      <div class="text-center">
+        <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <p class="mt-4 text-gray-600">Đang tải dữ liệu...</p>
+      </div>
+    </div>
+
+    <!-- Error State -->
+    <div v-else-if="error" class="bg-red-50 border border-red-200 rounded-lg p-4">
+      <p class="text-red-800">{{ error }}</p>
+      <button @click="loadDashboardData" class="mt-2 text-red-600 hover:text-red-800 underline">
+        Thử lại
+      </button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div v-else>
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <div
@@ -92,7 +110,7 @@
                 </svg>
               </div>
               <div>
-                <p class="font-semibold text-gray-900">#{{ order.id }}</p>
+                <p class="font-semibold text-gray-900">#{{ order.code }}</p>
                 <p class="text-sm text-gray-600">{{ order.customer }}</p>
               </div>
             </div>
@@ -156,17 +174,30 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, h } from 'vue'
+import { ref, onMounted, h, reactive, computed } from 'vue'
 import { Chart, registerables } from 'chart.js'
+import { dashboardApi } from '@/services/api'
+import { handleApiError } from '@/services/api'
 
 Chart.register(...registerables)
 
 const revenueChart = ref(null)
 const categoryChart = ref(null)
+const loading = ref(true)
+const error = ref(null)
+
+const dashboardData = reactive({
+  stats: null,
+  recentOrders: [],
+  topProducts: [],
+  monthlyRevenue: [],
+  categoryRevenue: []
+})
 
 // Icons
 const RevenueIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' }, [
@@ -185,47 +216,42 @@ const ProductIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke:
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' })
 ])
 
-const stats = [
+const stats = ref([
   {
     title: 'Tổng doanh thu',
-    value: '₫245M',
-    change: '+12.5%',
+    value: '₫0',
+    change: '0%',
     trend: 'up',
     color: 'bg-gradient-to-br from-blue-500 to-blue-600',
     icon: RevenueIcon
   },
   {
     title: 'Đơn hàng',
-    value: '1,234',
-    change: '+8.2%',
+    value: '0',
+    change: '0%',
     trend: 'up',
     color: 'bg-gradient-to-br from-green-500 to-green-600',
     icon: OrderIcon
   },
   {
     title: 'Khách hàng',
-    value: '892',
-    change: '+15.3%',
+    value: '0',
+    change: '0%',
     trend: 'up',
     color: 'bg-gradient-to-br from-purple-500 to-purple-600',
     icon: CustomerIcon
   },
   {
     title: 'Sản phẩm',
-    value: '456',
-    change: '-2.1%',
+    value: '0',
+    change: '0%',
     trend: 'down',
     color: 'bg-gradient-to-br from-primary-500 to-primary-600',
     icon: ProductIcon
   }
-]
+])
 
-const recentOrders = [
-  { id: '10234', customer: 'Nguyễn Văn A', amount: 3500000, status: 'Hoàn thành' },
-  { id: '10233', customer: 'Trần Thị B', amount: 2800000, status: 'Đang giao' },
-  { id: '10232', customer: 'Lê Văn C', amount: 4200000, status: 'Đang xử lý' },
-  { id: '10231', customer: 'Phạm Thị D', amount: 1800000, status: 'Hoàn thành' },
-]
+const recentOrders = ref([])
 
 const statusClasses = {
   'Hoàn thành': 'bg-green-100 text-green-800',
@@ -234,12 +260,7 @@ const statusClasses = {
   'Đã hủy': 'bg-red-100 text-red-800',
 }
 
-const topProducts = [
-  { id: 1, name: 'Nike Air Max 2024', sold: 234, revenue: 819000000, image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100' },
-  { id: 2, name: 'Adidas Ultraboost', sold: 198, revenue: 831600000, image: 'https://images.unsplash.com/photo-1608231387042-66d1773070a5?w=100' },
-  { id: 3, name: 'Jordan Retro High', sold: 156, revenue: 858000000, image: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=100' },
-  { id: 4, name: 'Puma RS-X', sold: 142, revenue: 397600000, image: 'https://images.unsplash.com/photo-1551107696-a4b0c5a0d9a2?w=100' },
-]
+const topProducts = ref([])
 
 const NotificationIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke: 'currentColor' }, [
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9' })
@@ -249,40 +270,18 @@ const UserAddIcon = () => h('svg', { fill: 'none', viewBox: '0 0 24 24', stroke:
   h('path', { 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' })
 ])
 
-const activities = [
-  {
-    id: 1,
-    title: 'Đơn hàng mới #10234',
-    description: 'Nguyễn Văn A đã đặt đơn hàng trị giá ₫3,500,000',
-    time: '5 phút trước',
-    color: 'bg-blue-500',
+const activities = computed(() => {
+  return recentOrders.value.slice(0, 4).map(order => ({
+    id: order.id,
+    title: `Đơn hàng mới #${order.code}`,
+    description: `${order.customer} đã đặt đơn hàng trị giá ${formatPrice(order.amount)}`,
+    time: getTimeAgo(order.createDate),
+    color: order.status === 'Hoàn thành' ? 'bg-green-500' : 
+            order.status === 'Đang giao' ? 'bg-blue-500' : 
+            order.status === 'Đang xử lý' ? 'bg-yellow-500' : 'bg-gray-500',
     icon: OrderIcon
-  },
-  {
-    id: 2,
-    title: 'Khách hàng mới',
-    description: 'Trần Thị B đã đăng ký tài khoản',
-    time: '15 phút trước',
-    color: 'bg-green-500',
-    icon: UserAddIcon
-  },
-  {
-    id: 3,
-    title: 'Sản phẩm sắp hết hàng',
-    description: 'Nike Air Max 2024 chỉ còn 5 sản phẩm',
-    time: '1 giờ trước',
-    color: 'bg-yellow-500',
-    icon: NotificationIcon
-  },
-  {
-    id: 4,
-    title: 'Đơn hàng hoàn thành',
-    description: 'Đơn hàng #10230 đã được giao thành công',
-    time: '2 giờ trước',
-    color: 'bg-primary-500',
-    icon: OrderIcon
-  },
-]
+  }))
+})
 
 function formatPrice(price) {
   return new Intl.NumberFormat('vi-VN', {
@@ -291,16 +290,100 @@ function formatPrice(price) {
   }).format(price)
 }
 
-onMounted(() => {
+function formatNumber(num) {
+  if (num >= 1000000000) {
+    return (num / 1000000000).toFixed(1) + 'B'
+  }
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M'
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K'
+  }
+  return num.toString()
+}
+
+function formatChange(percent) {
+  const sign = percent >= 0 ? '+' : ''
+  return `${sign}${percent.toFixed(1)}%`
+}
+
+function getTimeAgo(date) {
+  const now = new Date()
+  const diff = now - new Date(date)
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(minutes / 60)
+  const days = Math.floor(hours / 24)
+  
+  if (minutes < 1) return 'Vừa xong'
+  if (minutes < 60) return `${minutes} phút trước`
+  if (hours < 24) return `${hours} giờ trước`
+  return `${days} ngày trước`
+}
+
+async function loadDashboardData() {
+  try {
+    loading.value = true
+    error.value = null
+    const data = await dashboardApi.getStats()
+    
+    // Update stats
+    stats.value[0].value = formatPrice(data.stats.totalRevenue)
+    stats.value[0].change = formatChange(data.stats.revenueChangePercent)
+    stats.value[0].trend = data.stats.revenueChangePercent >= 0 ? 'up' : 'down'
+    
+    stats.value[1].value = data.stats.totalOrders.toLocaleString('vi-VN')
+    stats.value[1].change = formatChange(data.stats.ordersChangePercent)
+    stats.value[1].trend = data.stats.ordersChangePercent >= 0 ? 'up' : 'down'
+    
+    stats.value[2].value = data.stats.totalCustomers.toLocaleString('vi-VN')
+    stats.value[2].change = formatChange(data.stats.customersChangePercent)
+    stats.value[2].trend = data.stats.customersChangePercent >= 0 ? 'up' : 'down'
+    
+    stats.value[3].value = data.stats.totalProducts.toLocaleString('vi-VN')
+    stats.value[3].change = formatChange(data.stats.productsChangePercent)
+    stats.value[3].trend = data.stats.productsChangePercent >= 0 ? 'up' : 'down'
+    
+    // Update recent orders
+    recentOrders.value = data.recentOrders.map(order => ({
+      id: order.id,
+      code: order.code,
+      customer: order.customerName,
+      amount: order.total,
+      status: order.status,
+      createDate: order.createDate
+    }))
+    
+    // Update top products
+    topProducts.value = data.topProducts.map(product => ({
+      id: product.id,
+      name: product.name,
+      sold: product.sold,
+      revenue: product.revenue,
+      image: product.imageUrl || 'https://via.placeholder.com/100'
+    }))
+    
+    // Update charts
+    updateCharts(data.monthlyRevenue, data.categoryRevenue)
+    
+  } catch (err) {
+    error.value = handleApiError(err)
+    console.error('Error loading dashboard data:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+function updateCharts(monthlyData, categoryData) {
   // Revenue Chart
   if (revenueChart.value) {
     new Chart(revenueChart.value, {
       type: 'line',
       data: {
-        labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6'],
+        labels: monthlyData.map(m => m.month),
         datasets: [{
-          label: 'Doanh thu (triệu đồng)',
-          data: [32, 38, 35, 45, 52, 48],
+          label: 'Doanh thu',
+          data: monthlyData.map(m => m.revenue / 1000000), // Convert to millions
           borderColor: '#f97316',
           backgroundColor: 'rgba(249, 115, 22, 0.1)',
           tension: 0.4,
@@ -329,18 +412,14 @@ onMounted(() => {
 
   // Category Chart
   if (categoryChart.value) {
+    const colors = ['#f97316', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#f59e0b', '#6366f1']
     new Chart(categoryChart.value, {
       type: 'doughnut',
       data: {
-        labels: ['Running', 'Basketball', 'Casual', 'Sports'],
+        labels: categoryData.map(c => c.categoryName),
         datasets: [{
-          data: [35, 25, 30, 10],
-          backgroundColor: [
-            '#f97316',
-            '#3b82f6',
-            '#10b981',
-            '#8b5cf6'
-          ],
+          data: categoryData.map(c => c.revenue),
+          backgroundColor: colors.slice(0, categoryData.length),
           borderWidth: 0
         }]
       },
@@ -355,6 +434,10 @@ onMounted(() => {
       }
     })
   }
+}
+
+onMounted(() => {
+  loadDashboardData()
 })
 </script>
 

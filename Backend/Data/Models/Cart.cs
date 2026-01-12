@@ -1,30 +1,29 @@
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Data.Models
+namespace Data.Models;
+
+[Table("Cart")]
+[Index("AccountId", Name = "IX_Cart_AccountID")]
+public partial class Cart
 {
-    [Table("carts")]
-    public class Cart
-    {
-        [Key]
-        [Column("id")]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+    [Key]
+    [Column("ID")]
+    public int Id { get; set; }
 
-        [Required]
-        [Column("user_id")]
-        public string UserId { get; set; } = string.Empty;
+    [Column("AccountID")]
+    public int AccountId { get; set; }
 
-        [Column("created_at")]
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Column(TypeName = "datetime")]
+    public DateTime CreateDate { get; set; }
 
-        [Column("updated_at")]
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    [ForeignKey("AccountId")]
+    [InverseProperty("Carts")]
+    public virtual Account Account { get; set; } = null!;
 
-        // Navigation properties
-        [ForeignKey("UserId")]
-        public virtual User? User { get; set; }
-
-        public virtual ICollection<CartItem> CartItems { get; set; } = new List<CartItem>();
-    }
+    [InverseProperty("Cart")]
+    public virtual ICollection<CartDetail> CartDetails { get; set; } = new List<CartDetail>();
 }
-

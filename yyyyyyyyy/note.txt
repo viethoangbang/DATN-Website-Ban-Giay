@@ -1,0 +1,86 @@
+MỤC TIÊU TỪ GIỜ ĐẾN THỨ 2
+
+SỬA LẠI DB PHẦN BRAND (TÁCH RA BẢNG RIÊNG)
+
+tải ảnh lên từ máy tính
+
+
+
+phần sản phẩm khi huỷ đơn hàng sẽ được sử lý như nào
+
+1️⃣ Khách huỷ khi CHƯA thanh toán
+
+👉 Đơn hàng = Cancelled
+
+Không có tiền
+
+Không trừ kho (hoặc nếu đã giữ kho → trả lại kho)
+
+Không liên quan vận chuyển
+
+📦 Sản phẩm:
+➡️ Ở nguyên trong kho
+2️⃣ Đã thanh toán nhưng CHƯA giao cho đơn vị vận chuyển
+
+👉 Huỷ + hoàn tiền
+
+Order: Cancelled
+
+Payment: Refund
+
+Kho: trả lại số lượng đã trừ
+
+📦 Sản phẩm:
+➡️ Quay về kho bán bình thường
+3️⃣ Đã giao cho đơn vị vận chuyển nhưng CHƯA tới tay khách
+
+👉 Hoàn hàng (Return to Sender)
+
+Đơn vị vận chuyển trả hàng về shop
+
+Có thể phát sinh phí ship
+
+Kiểm tra tình trạng hàng
+
+📦 Sản phẩm:
+
+✔️ Hàng nguyên → nhập lại kho
+
+❌ Hư / móp → kho lỗi / kho hủy
+
+4️⃣ Đã giao thành công → khách yêu cầu huỷ / trả
+
+👉 Đây KHÔNG còn là huỷ, mà là RETURN / REFUND
+
+Tách 2 luồng:
+
+✔️ Chấp nhận trả
+
+Tạo Return Order
+
+Khách gửi hàng về
+
+Kiểm tra chất lượng
+
+📦 Sản phẩm:
+
+Nguyên seal → kho
+
+Đã dùng / lỗi → kho hàng trả / thanh lý
+
+❌ Không chấp nhận trả
+
+Đơn giữ trạng thái Completed
+
+Không hoàn tiền
+
+Không nhập kho
+5️⃣ Chuẩn hoá trạng thái (RẤT NÊN CÓ)
+Pending        : mới tạo
+Paid           : đã thanh toán
+Confirmed      : shop xác nhận
+Shipping       : đang giao
+Delivered      : giao thành công
+Cancelled      : huỷ trước giao
+Returned       : trả hàng
+Refunded       : đã hoàn tiền

@@ -1,0 +1,24 @@
+
+Bỏ cái timeline ở cart
+
+Check trùng màu
+
+Thêm time line hoá đơn
+
+Trừ sản phẩm khi nhân viên hoặc admin xác nhận đơn hàng
+
+Điều hướng theo vai trò: Đăng nhập xong nếu account có nhiều hơn 1 role thì hỏi người dùng muốn đăng nhập giao diện ở role nào vì mỗi role 1 giao diện
+
+3 role (Khách, nhân viên, admin)
+
+Nhân viên không được sửa hoá đơn
+
+Admin cấp quyền nhân viên, quản lí nhân viên
+
+Id đơn hàng nên để ngắn
+
+Checkout và cart thiếu thông tin
+
+Trạng thái đơn hàng
+
+Tự tìm hiểu nghiệp vụ bán hàng trên các trang thương mại điện tử lớn và thêm
